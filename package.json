@@ -1,0 +1,98 @@
+{
+  "name": "stride",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "main": "./build/bootstrap.js",
+  "files": [
+    "build",
+    "src",
+    "test"
+  ],
+  "scripts": {
+    "start": "forever start ./build/bootstrap.js",
+    "stop": "forever stop ./build/bootstrap.js",
+    "build": "gulp build",
+    "dev": "nodemon --exec babel-node src/bootstrap.js --ignore node_modules",
+    "test": "mocha ./test/main.js --compilers js:babel-core/register"
+  },
+  "author": "Kieron Wiltshire",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "dependencies": {
+    "babel-runtime": "^6.25.0",
+    "bcrypt": "^3.0.0",
+    "bluebird": "^3.5.0",
+    "body-parser": "^1.17.2",
+    "bootit": "^1.3.0",
+    "cookie-parser": "^1.4.3",
+    "cors": "^2.8.4",
+    "debug": "^2.6.8",
+    "dotenv": "^4.0.0",
+    "dotenv-parse-variables": "^0.2.0",
+    "exponential-moving-average": "^1.0.0",
+    "express": "^4.15.3",
+    "forever": "^0.15.3",
+    "fs-extra": "^5.0.0",
+    "greenlock": "^2.3.6",
+    "helmet": "^3.8.1",
+    "http": "0.0.0",
+    "https": "^1.0.0",
+    "jsonwebtoken": "^7.4.3",
+    "lodash": "^4.17.10",
+    "method-override": "^2.3.9",
+    "monk": "^6.0.6",
+    "morgan": "^1.8.2",
+    "nodemailer": "^4.1.0",
+    "pug": "^2.0.0-rc.3",
+    "querystring": "^0.2.0",
+    "randomstring": "^1.1.5",
+    "respondent": "^1.1.0",
+    "socket.io": "^2.0.3",
+    "socket.io-client": "^2.1.1",
+    "uuid": "^3.1.0",
+    "validator": "^8.2.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.22.2",
+    "babel-core": "^6.23.1",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-root-import": "^6.1.0",
+    "babel-plugin-transform-async-to-generator": "^6.22.0",
+    "babel-plugin-transform-builtin-extend": "^1.1.2",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-es2015": "^6.24.1",
+    "chai": "^4.0.2",
+    "chai-http": "^3.0.0",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^6.1.2",
+    "mocha": "^3.2.0",
+    "nodemon": "^1.11.0"
+  },
+  "babel": {
+    "presets": [
+      "es2015"
+    ],
+    "plugins": [
+      "add-module-exports",
+      "transform-runtime",
+      "transform-async-to-generator",
+      "transform-class-properties",
+      [
+        "babel-plugin-transform-builtin-extend",
+        {
+          "globals": [
+            "Error",
+            "Array"
+          ]
+        }
+      ],
+      [
+        "babel-plugin-root-import",
+        {
+          "rootPathSuffix": "src"
+        }
+      ]
+    ]
+  }
+}

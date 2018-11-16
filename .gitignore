@@ -1,0 +1,7 @@
+.env
+/node_modules
+/build
+npm-debug.log
+/rethinkdb_data
+/certificate.pem
+/key.pem
