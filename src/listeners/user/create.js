@@ -2,7 +2,6 @@
 
 import {default as createDebugger} from 'debug';
 import UserAPI from '~/api/user';
-import ProfileAPI from '~/api/profile';
 
 /**
  * Debugger

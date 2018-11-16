@@ -17,6 +17,7 @@ import CookieParser from 'cookie-parser';
 import MethodOverride from 'method-override';
 import {default as createDebugger} from 'debug';
 import ErrorResponse from '~/errors/response';
+import {default as Database, hasDatabaseConnection, databaseNotConnectedCode} from './database';
 import '~/listeners';
 
 export const config = new Respondent({ rootDir: Path.join(__dirname, 'config'), env: Env });
@@ -109,6 +110,19 @@ Application.use(function(request, response, next) {
  * Configure non-api endpoints
  */
 Application.use('/public', Express.static(publicDir));
+
+/**
+ * Ensure that the database is connected before
+ * allowing the request to continue through it's
+ * lifecycle.
+ */
+Application.use(function(request, response, next) {
+  if (hasDatabaseConnection()) {
+    next();
+  } else {
+    next(new Errors.InternalServerError().push(databaseNotConnectedCode));
+  }
+});
 
 // Apply router if after the middleware has been applied
 Application.use(Router);
