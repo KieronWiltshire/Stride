@@ -1,7 +1,7 @@
 {
   "name": "stride",
   "version": "1.0.0",
-  "description": "",
+  "description": "Boilerplate/framework for developing APIs quickly and effectively in node",
   "private": true,
   "main": "./build/bootstrap.js",
   "files": [
