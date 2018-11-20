@@ -4,7 +4,7 @@ import _ from 'lodash';
 import EventEmitter from 'events';
 import Validator from 'validator';
 import Errors from '~/errors';
-import * as Database from '~/database';
+import Database from '~/database';
 import Bcrypt from 'bcrypt';
 import RandomString from 'randomstring';
 import * as Mailer from '~/mailer';

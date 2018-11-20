@@ -72,7 +72,9 @@ export function hasDatabaseConnection() {
 /**
  * Create an instance of {Monk}.
  */
-let monk = Monk(connectionURL).then((db) => {
+let monk = Monk(connectionURL);
+
+monk.then((db) => {
   isConnectionEstablished = true;
 
   /**
@@ -99,7 +101,6 @@ let monk = Monk(connectionURL).then((db) => {
   isConnectionEstablished = false;
   throw new Errors.InternalServerError().push(databaseConnectionFailedCode);
 });
-
 
 /**
  * Export database functions
