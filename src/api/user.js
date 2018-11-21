@@ -21,6 +21,7 @@ export const userPasswordResetTokenMismatchCode = new Errors.ErrorCode('password
 export const userPasswordResetTokenExpiredCode = new Errors.ErrorCode('password_reset_token_expired', { message: 'The password could not be reset because the specified token has expired' });
 export const unableToSendEmailVerificationTokenCode = new Errors.ErrorCode('unable_to_send_email_verification_token', { message: 'Unable to send the email verification token' });
 export const userEmailVerificationTokenMismatchCode = new Errors.ErrorCode('email_verification_token_mismatch', { message: 'The email could not be verified because the specified token is invalid' });
+export const userPasswordCannotBeResetCode = new Errors.ErrorCode('cannot_reset_user_password', { message: 'The user password could not be reset to the specified password' });
 
 /**
  * User API
@@ -345,6 +346,17 @@ class UserAPI extends Base {
 
       // check it has not expired
       if (Validator.isAfter(decodedToken.expiry, new Date())) {
+        if (password && Validator.isLength(password, { min: 6 })) {
+          password = await Bcrypt.hash(password, this.getConfig().get('user.passwordHashRounds', 10));
+        } else {
+          let meta = userPasswordCannotBeResetCode.getMeta();
+              meta.fields = [
+                'password'
+              ];
+
+          throw new Errors.ValidationError().push(userPasswordCannotBeResetCode.clone().setMeta(meta));
+        }
+
         let collection = Database.get('users');
         let updatedUser = await collection.findOneAndUpdate({ _id }, Object.assign({
           password
