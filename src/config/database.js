@@ -1,11 +1,10 @@
 'use strict';
 
-import path from 'path';
+import Path from 'path';
 
 /**
  * Database configuration
  */
-
 var options = {};
 
 /**
@@ -28,6 +27,7 @@ options['port'] = process.env.DB_PORT || 27017;
  * The username used to access the database.
  */
 options['username'] = process.env.DB_USERNAME || 'root';
+options['user'] = options['username'];
 
 /**
  * Database's password
@@ -42,5 +42,14 @@ options['password'] = process.env.DB_PASSWORD || null;
  * The name of the database to access.
  */
 options['database'] = process.env.DB_NAME || 'testapp';
+options['db'] = options['database'];
+
+/**
+ * Database's migrations directory
+ *
+ * The path to the directory that holds the migration files.
+ */
+options['migrationsDirectory'] = Path.join(process.cwd(), './migrations');
+options['directory'] = options['migrationsDirectory'];
 
 export default options;
