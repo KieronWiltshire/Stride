@@ -1,14 +1,22 @@
 'use strict';
 
 import _ from 'lodash';
+import Path from 'path';
 import EventEmitter from 'events';
 import Validator from 'validator';
 import Errors from '~/errors';
-import Database from '~/database';
+import * as Database from '~/database';
 import Bcrypt from 'bcrypt';
 import RandomString from 'randomstring';
 import * as Mailer from '~/mailer';
 import Base from './base';
+import Env from '~/env';
+import Respondent from 'respondent';
+
+/**
+ * Load configurations
+ */
+const config = new Respondent({ rootDir: Path.join(__dirname, '..', 'config'), env: Env });
 
 /**
  * Error codes.
@@ -44,18 +52,23 @@ class UserAPI extends Base {
    * @returns {Array<User>}
    */
   async index({ limit, offset } = {}) {
-    let collection = Database.get('users');
-    let options = {};
+    let connection = await Database.getConnection();
+
+    let db = connection.db(config.get('database.database', 'stride'));
+    let collection = db.collection('users');
+    let result = collection.find({});
 
     if (limit) {
-      options.limit = this.validatePaginationParameter({ type: 'limit', value: limit });
+      limit = this.validatePaginationParameter({ type: 'limit', value: limit });
+      result.limit(limit);
     }
 
     if (offset) {
-      options.skip = this.validatePaginationParameter({ type: 'offset', value: offset });
+      offset = this.validatePaginationParameter({ type: 'offset', value: offset });
+      result.skip(offset);
     }
 
-    return collection.find({}, options);
+    return result.toArray();
   }
 
   /**
@@ -86,23 +99,37 @@ class UserAPI extends Base {
     }
 
     if (validationErrors.length <= 0) {
-      let collection = Database.get('users');
-      let exists = [] = await collection.find({ $or: [{ username }, { email }] });
+      let connection = await Database.getConnection();
+
+      let db = connection.db(config.get('database.database', 'stride'));
+      let collection = db.collection('users');
+      let exists = await collection.find({ $or: [{ username }, { email }] }).toArray();
 
       if (exists.length <= 0) {
         let now = new Date();
+        let user = null;
 
-        let user = await collection.insert({
-          email,
-          username,
-          password,
-          passwordResetToken: this.generatePasswordResetToken(),
-          emailVerificationToken: this.generateEmailVerificationToken({ email }),
-          emailVerified: false,
-          sessionsValidAfter: now,
-          createdAt: now,
-          updatedAt: now,
-        });
+        try {
+          user = await collection.insertOne({
+            email,
+            username,
+            password,
+            passwordResetToken: this.generatePasswordResetToken(),
+            emailVerificationToken: this.generateEmailVerificationToken({ email }),
+            emailVerified: false,
+            sessionsValidAfter: now,
+            createdAt: now,
+            updatedAt: now,
+          });
+        } catch (error) {
+          console.error(error);
+        }
+
+        if ((!user) || (user && !user.ops) || (user && user.ops && !user.ops[0])) {
+          throw new Errors.InternalServerError();
+        }
+
+        user = user.ops[0];
 
         // Throw event
         this.emit('create', { user });
@@ -132,12 +159,19 @@ class UserAPI extends Base {
   /**
    * Find a {User} by identifier.
    *
-   * @param {string} id
+   * @param {string} _id
    * @returns {User}
    */
-  async findById({ id }) {
-    let collection = Database.get('users');
-    let result = await collection.findOne({ _id: id });
+  async findById({ _id }) {
+    if (typeof _id === 'string') {
+      _id = Database.ObjectID(_id);
+    }
+
+    let connection = await Database.getConnection();
+
+    let db = connection.db(config.get('database.database', 'stride'));
+    let collection = db.collection('users');
+    let result = await collection.findOne({ _id });
 
     if (result) {
       return result;
@@ -153,7 +187,10 @@ class UserAPI extends Base {
    * @returns {User}
    */
   async findByUsername({ username }) {
-    let collection = Database.get('users');
+    let connection = await Database.getConnection();
+
+    let db = connection.db(config.get('database.database', 'stride'));
+    let collection = db.collection('users');
     let result = await collection.findOne({ username });
 
     if (result) {
@@ -170,7 +207,10 @@ class UserAPI extends Base {
    * @returns {User}
    */
   async findByEmail({ email }) {
-    let collection = Database.get('users');
+    let connection = await Database.getConnection();
+
+    let db = connection.db(config.get('database.database', 'stride'));
+    let collection = db.collection('users');
     let result = await collection.findOne({ email });
 
     if (result) {
@@ -189,7 +229,10 @@ class UserAPI extends Base {
    * @returns {User}
    */
   async find({ param, value, regex = true } = {}) {
-    let collection = Database.get('users');
+    let connection = await Database.getConnection();
+
+    let db = connection.db(config.get('database.database', 'stride'));
+    let collection = db.collection('users');
 
     let filter = {};
         filter[param] = (regex ? { $regex: value } : value);
@@ -207,12 +250,19 @@ class UserAPI extends Base {
   async edit({ user, data }) {
     let { _id } = user;
     let { email, password, username } = data;
-    let update = Object.assign({ updatedAt: new Date() }, user);
+
+    if (typeof _id === 'string') {
+      _id = Database.ObjectID(_id);
+    }
+
+    let $set = Object.assign({ updatedAt: new Date() }, user);
+    delete $set._id;
+
     let validationErrors = [];
 
     if (email) {
       if (Validator.isEmail(email)) {
-        update.email = email = Validator.normalizeEmail(email);
+        $set.email = email = Validator.normalizeEmail(email);
       } else {
         validationErrors.push('email');
       }
@@ -220,7 +270,7 @@ class UserAPI extends Base {
 
     if (password) {
       if (Validator.isLength(password, { min: 6 })) {
-        update.password = password = await Bcrypt.hash(password, this.getConfig().get('user.passwordHashRounds', 10));
+        $set.password = password = await Bcrypt.hash(password, this.getConfig().get('user.passwordHashRounds', 10));
       } else {
         validationErrors.push('password');
       }
@@ -228,14 +278,17 @@ class UserAPI extends Base {
 
     if (username) {
       if (Validator.isLength(username, {min: 1}) && Validator.isAlphanumeric(username)) {
-        update.username = username;
+        $set.username = username;
       } else {
         validationErrors.push('username');
       }
     }
 
     if (validationErrors.length <= 0) {
-      let collection = Database.get('users');
+      let connection = await Database.getConnection();
+
+      let db = connection.db(config.get('database.database', 'stride'));
+      let collection = db.collection('users');
       let $or = [];
 
       if (email) {
@@ -246,10 +299,12 @@ class UserAPI extends Base {
         $or.push({ username });
       }
 
-      let exists = [] = await collection.find({ $or });
+      let exists = await collection.find({ $or }).toArray();
 
       if (exists.length <= 0) {
-        let updatedUser = await collection.findOneAndUpdate({ _id }, update);
+        let updatedUser = await collection.findOneAndUpdate({ _id }, { $set }, { returnOriginal: false });
+
+        updatedUser = updatedUser.value;
 
         // Throw event
         this.emit('edit', { user, updatedUser });
@@ -284,17 +339,26 @@ class UserAPI extends Base {
    */
   async forgotPassword({ user }) {
     let { _id } = user;
-    let collection = Database.get('users');
 
-    user = await collection.findOneAndUpdate({ _id }, Object.assign({
-      updatedAt: new Date(),
-      passwordResetToken: this.generatePasswordResetToken()
-    }, user));
+    if (typeof _id === 'string') {
+      _id = Database.ObjectID(_id);
+    }
+
+    let $set = Object.assign({ passwordResetToken: this.generatePasswordResetToken(), updatedAt: new Date() }, user);
+    delete $set._id;
+
+    let connection = await Database.getConnection();
+
+    let db = connection.db(config.get('database.database', 'stride'));
+    let collection = db.collection('users');
+
+    updatedUser = await collection.findOneAndUpdate({ _id }, { $set }, { returnOriginal: false });
+    updatedUser = updatedUser.value;
 
     // Throw event
-    this.emit('forgotPassword', { user });
+    this.emit('forgotPassword', { updatedUser });
 
-    return user;
+    return updatedUser;
   }
 
   /**
@@ -338,6 +402,11 @@ class UserAPI extends Base {
    */
   async resetPassword({ user, password, passwordResetToken }) {
     let { _id } = user;
+
+    if (typeof _id === 'string') {
+      _id = Database.ObjectID(_id);
+    }
+
     let now = new Date();
     let update = Object.assign({ updatedAt: now, sessionsValidAfter: now }, user);
 
@@ -357,10 +426,16 @@ class UserAPI extends Base {
           throw new Errors.ValidationError().push(userPasswordCannotBeResetCode.clone().setMeta(meta));
         }
 
-        let collection = Database.get('users');
-        let updatedUser = await collection.findOneAndUpdate({ _id }, Object.assign({
-          password
-        }, update));
+        let connection = await Database.getConnection();
+
+        let db = connection.db(config.get('database.database', 'stride'));
+        let collection = db.collection('users');
+
+        let $set = Object.assign({ password }, user);
+        delete $set._id;
+
+        let updatedUser = await collection.findOneAndUpdate({ _id }, { $set }, { returnOriginal: false });
+        updatedUser = updatedUser.value;
 
         // Throw event
         this.emit('resetPassword', { user, updatedUser });
@@ -416,6 +491,11 @@ class UserAPI extends Base {
    */
   async changeEmail({ user, email }) {
     let { _id } = user;
+
+    if (typeof _id === 'string') {
+      _id = Database.ObjectID(_id);
+    }
+
     let validationErrors = [];
 
     if (email && Validator.isEmail(email)) {
@@ -425,19 +505,23 @@ class UserAPI extends Base {
     }
 
     if (validationErrors.length <= 0) {
-      let collection = Database.get('users');
-      let exists = [] = await collection.find({ email });
+      let connection = await Database.getConnection();
+
+      let db = connection.db(config.get('database.database', 'stride'));
+      let collection = db.collection('users');
+      let exists = await collection.find({ email });
 
       if (exists.length <= 0) {
-        user = await collection.findOneAndUpdate({ _id }, Object.assign({
-          updatedAt: new Date(),
-          emailVerificationToken: this.generateEmailVerificationToken({ email })
-        }, user));
+        let $set = Object.assign({ emailVerificationToken: this.generateEmailVerificationToken({ email }), updatedAt: new Date() }, user);
+        delete $set._id;
+
+        updatedUser = await collection.findOneAndUpdate({ _id }, { $set }, { returnOriginal: false });
+        updatedUser = updatedUser.value;
 
         // Throw event
-        this.emit('changeEmail', { user });
+        this.emit('changeEmail', { updatedUser });
 
-        return user;
+        return updatedUser;
       } else {
         for (let record of exists) {
           if ((record.email) && (record.email === email)) {
@@ -493,16 +577,22 @@ class UserAPI extends Base {
    * @return {User}
    */
   async verifyEmail({ user, emailVerificationToken }) {
-    let update = Object.assign({ updatedAt: new Date() }, user);
     let { _id } = user;
 
+    if (typeof _id === 'string') {
+      _id = Database.ObjectID(_id);
+    }
+
     if (user.emailVerificationToken === emailVerificationToken) {
-      let collection = Database.get('users');
+      let connection = await Database.getConnection();
+
+      let db = connection.db(config.get('database.database', 'stride'));
+      let collection = db.collection('users');
       let decodedToken = this.parseEmailVerificationToken({ emailVerificationToken });
-      let updatedUser = await collection.findOneAndUpdate({ _id }, Object.assign({
-        email: decodedToken.email,
-        emailVerified: true
-      }, update));
+
+      let $set = Object.assign({ email: decodedToken.email, emailVerified: true, updatedAt: new Date()}, user);
+      let updatedUser = await collection.findOneAndUpdate({ _id }, { $set } , { returnOriginal: false });
+      updatedUser = updatedUser.value;
 
       // Throw event
       this.emit('verifyEmail', { user, updatedUser });
@@ -541,16 +631,19 @@ class UserAPI extends Base {
    * @return {User}
    */
   async verifyEmail({ user, emailVerificationToken }) {
-    let update = Object.assign({ updatedAt: new Date() }, user);
     let { _id } = user;
 
     if (user.emailVerificationToken === emailVerificationToken) {
-      let collection = Database.get('users');
+      let connection = await Database.getConnection();
+
+      let db = connection.db(config.get('database.database', 'stride'));
+      let collection = db.collection('users');
+
       let decodedToken = this.parseEmailVerificationToken({ emailVerificationToken });
-      let updatedUser = await collection.findOneAndUpdate({ _id }, Object.assign({
-        email: decodedToken.email,
-        emailVerified: true
-      }, update));
+
+      let $set = Object.assign({ email: decodedToken.email, emailVerified: true, updatedAt: new Date() }, user)
+      let updatedUser = await collection.findOneAndUpdate({ _id }, { $set }, { returnOriginal: false });
+      updatedUser = updatedUser.value;
 
       // Throw event
       this.emit('verifyEmail', { user, updatedUser });
