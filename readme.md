@@ -33,7 +33,7 @@ openssl req -x509 -out certificate.pem -keyout key.pem \
 
 # Setup
 
-> The application uses [monk][7] in order to access the [monogodb][8] database.
+> The application uses a [monogodb][8] database.
 
 ----
 #  Starting the application
@@ -66,7 +66,7 @@ When developing an application on top of this template, you should stay consiste
 - Config files *should* be loaded and accessed using the `respondent` npm package.
 - Database tables that are required for the application to function *should* be created and maintained through the use of migrations.
 - Migrations *should* only exist within the `src/migrations` directory.
-- Migrations *should* only be created using the `npm run db migrate:make` command.
+- Migrations *should* only be created using the `npx mogront --config="./src/config/database.js" <args>` command.
 - When creating new files that you'd like to debug, please use the application's namespace. An example is as follows:
 
 ```JavaScript
