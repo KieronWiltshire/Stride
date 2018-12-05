@@ -1,7 +1,6 @@
 'use strict';
 
-// import Path from 'path';
-const Path = require('path');
+import Path from 'path';
 
 /**
  * Database configuration
@@ -50,8 +49,7 @@ options['db'] = options['database'];
  *
  * The path to the directory that holds the migration files.
  */
-options['migrationsDir'] = './migrations';
+options['migrationsDir'] = Path.join(process.cwd(), './migrations');
 options['directory'] = options['migrationsDir'];
 
-// export default options;
-module.exports = options;
+export default options;

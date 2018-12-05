@@ -14,7 +14,8 @@
     "stop": "forever stop ./build/bootstrap.js",
     "build": "gulp build",
     "dev": "nodemon --exec babel-node src/bootstrap.js --ignore node_modules",
-    "test": "mocha ./test/main.js --compilers js:babel-core/register"
+    "test": "mocha ./test/main.js --compilers js:babel-core/register",
+    "mogront": "babel-node ./node_modules/mogront/build/bin/cli.js --config=\"mogront.config.js\""
   },
   "author": "Kieron Wiltshire",
   "license": "SEE LICENSE IN LICENSE.md",
@@ -38,9 +39,10 @@
     "http": "0.0.0",
     "https": "^1.0.0",
     "jsonwebtoken": "^7.4.3",
+    "knex": "^0.15.2",
     "lodash": "^4.17.10",
     "method-override": "^2.3.9",
-    "mogront": "^1.0.2",
+    "mogront": "^1.0.4",
     "mongodb": "^3.1.10",
     "morgan": "^1.8.2",
     "nodemailer": "^4.1.0",

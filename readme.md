@@ -65,8 +65,8 @@ When developing an application on top of this template, you should stay consiste
 - Custom config files *should* only exist within `src/config`.
 - Config files *should* be loaded and accessed using the `respondent` npm package.
 - Database tables that are required for the application to function *should* be created and maintained through the use of migrations.
-- Migrations *should* only exist within the `src/migrations` directory.
-- Migrations *should* only be created using the `npx mogront --config="./src/config/database.js" <args>` command.
+- Migrations *should* only exist within the `migrations` directory.
+- Migrations *should* only be created using the `mogront` npm package, you can use the cli like so `npm run mogront <args>` command.
 - When creating new files that you'd like to debug, please use the application's namespace. An example is as follows:
 
 ```JavaScript
