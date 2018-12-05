@@ -15,7 +15,7 @@
     "build": "gulp build",
     "dev": "nodemon --exec babel-node src/bootstrap.js --ignore node_modules",
     "test": "mocha ./test/main.js --compilers js:babel-core/register",
-    "mogront": "babel-node ./node_modules/mogront/build/bin/cli.js --config=\"mogront.config.js\""
+    "mogront": "babel-node ./node_modules/mogront/build/bin/cli.js --config=\"mogront.config.js\" --template=\"es6\""
   },
   "author": "Kieron Wiltshire",
   "license": "SEE LICENSE IN LICENSE.md",
