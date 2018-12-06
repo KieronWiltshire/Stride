@@ -49,7 +49,7 @@ options['db'] = options['database'];
  *
  * The path to the directory that holds the migration files.
  */
-options['migrationsDir'] = Path.join(process.cwd(), './migrations');
+options['migrationsDir'] = Path.join(__dirname, '..', 'migrations');
 options['directory'] = options['migrationsDir'];
 
 export default options;
