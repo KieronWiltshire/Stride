@@ -34,6 +34,7 @@
     "express": "^4.15.3",
     "forever": "^0.15.3",
     "fs-extra": "^5.0.0",
+    "gelert": "^2.0.0",
     "greenlock": "^2.3.6",
     "helmet": "^3.8.1",
     "http": "0.0.0",

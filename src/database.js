@@ -59,7 +59,9 @@ if (options.db) {
 /**
  * Export connection
  */
-export const client = MongoClient.connect('mongodb://' + connectionURL);
+export const client = MongoClient.connect('mongodb://' + connectionURL, {
+  useNewUrlParser: true
+});
 
 /**
  * Export getConnection
