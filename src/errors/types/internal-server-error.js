@@ -16,4 +16,4 @@ export default class InternalServerError extends BaseError {
     this.message = 'An internal server error occured';
   }
 
-};
+}

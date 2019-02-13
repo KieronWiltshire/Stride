@@ -1,7 +1,7 @@
 'use strict';
 
-import {default as createDebugger} from 'debug';
 import UserAPI from '~/api/user';
+import {default as createDebugger} from 'debug';
 
 /**
  * Debugger

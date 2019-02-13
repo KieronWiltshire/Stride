@@ -60,4 +60,4 @@ export default class ErrorCode {
     return new ErrorCode(this.getCode(), this.getMeta());
   }
 
-};
+}

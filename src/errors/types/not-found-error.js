@@ -16,4 +16,4 @@ export default class NotFoundError extends BaseError {
     this.message = 'The intended resource could not be found';
   }
 
-};
+}

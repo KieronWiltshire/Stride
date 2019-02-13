@@ -1,15 +1,21 @@
 'use strict';
 
-import Env from '~/env';
-import Path from 'path';
 import OS from 'os';
-import {default as Application, io} from '~/app';
-import Respondent from 'respondent';
+import Path from 'path';
+import Env from '~/env';
 import Bootit from 'bootit';
 import Greenlock from 'greenlock';
+import Respondent from 'respondent';
+import {default as Application, io} from '~/app';
 
+/**
+ * Load configurations
+ */
 const config = new Respondent({ rootDir: Path.join(__dirname, 'config'), env: Env });
 
+/**
+ * Bootstrap
+ */
 let options = {
   io: io,
   redirectToHttps: true

@@ -22,7 +22,7 @@ options['port'] = process.env.MAIL_PORT || 587;
 /**
  * Connect to the mailer using SSL/TLS
  */
-options['secure'] = (process.env.MAIL_SECURE !== null) ? process.env.MAIL_SECURE : || false;
+options['secure'] = (process.env.MAIL_SECURE !== null) ? process.env.MAIL_SECURE : false;
 
 /**
  * Mailer's username

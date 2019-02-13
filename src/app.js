@@ -1,39 +1,47 @@
 'use strict';
 
 import Fs from 'fs';
+import '~/listeners';
 import Path from 'path';
-import Cors from 'cors';
 import Env from '~/env';
+import Cors from 'cors';
 import IO from 'socket.io';
-import Logger from 'morgan';
 import Helmet from 'helmet';
+import Logger from 'morgan';
 import Express from 'express';
-import Router from '~/routes';
 import Errors from '~/errors';
+import Router from '~/routes';
 import Respondent from 'respondent';
 import BodyParser from 'body-parser';
-import Context from '~/utilities/context';
 import CookieParser from 'cookie-parser';
+import Context from '~/utilities/context';
 import MethodOverride from 'method-override';
-import {default as createDebugger} from 'debug';
 import ErrorResponse from '~/errors/response';
-import {default as Database, hasDatabaseConnection, databaseNotConnectedCode} from './database';
-import '~/listeners';
+import {default as createDebugger} from 'debug';
+import {hasDatabaseConnection, databaseNotConnectedCode} from './database';
 
+/**
+ * Load configurations
+ */
 export const config = new Respondent({ rootDir: Path.join(__dirname, 'config'), env: Env });
 
+/**
+ * Debugger
+ */
 const debug = createDebugger(config.get('app.name') + ':' + 'app');
 
+/**
+ * Directories
+ */
 export const viewsDir = Path.join(__dirname, 'views');
 export const publicDir = Path.join(__dirname, '..', 'public');
 export const storageDir = Path.join(__dirname, 'storage');
-
-export const io = IO();
 
 /**
  * Configure Express
  */
 export const Application = Express();
+export const io = IO();
 
 /**
  * Setup view engine && pretty responses
@@ -49,10 +57,10 @@ Application.set('view engine', config.get('app.viewEngine', 'pug'));
 /**
  * Serve the favicon
  */
-let faviconPath = Path.join(publicDir, 'favicon.ico');
-if (Fs.existsSync(faviconPath)) {
-  Application.use(favicon(faviconPath));
-}
+// let faviconPath = Path.join(publicDir, 'favicon.ico');
+// if (Fs.existsSync(faviconPath)) {
+//   Application.use(favicon(faviconPath));
+// }
 
 // .
 Application.disable('etag');
@@ -151,7 +159,7 @@ Application.use(function(request, response, next) {
 });
 
 // Apply a route response handler
-Application.use(function(error, request, response, next) {
+Application.use(function(error, request, response) {
   debug(error);
   response.status(error.status || 500).json({
     error: ErrorResponse.format(error)

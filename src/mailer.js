@@ -1,8 +1,8 @@
 'use strict';
 
 import Path from 'path';
-import Respondent from 'respondent';
 import Env from '~/env';
+import Respondent from 'respondent';
 import NodeMailer from 'nodemailer';
 
 /**

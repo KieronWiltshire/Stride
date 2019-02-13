@@ -1,10 +1,11 @@
 'use strict';
 
 import Path from 'path';
-import Respondent from 'respondent';
 import Env from '~/env';
-import MongoDB from 'mongodb';
 import Errors from '~/errors';
+import MongoDB from 'mongodb';
+import Respondent from 'respondent';
+import {default as createDebugger} from 'debug';
 
 const MongoClient = MongoDB.MongoClient;
 export const ObjectID = MongoDB.ObjectID;
@@ -13,6 +14,11 @@ export const ObjectID = MongoDB.ObjectID;
  * Load configurations
  */
 const config = new Respondent({ rootDir: Path.join(__dirname, 'config'), env: Env });
+
+/**
+ * Debugger
+ */
+const debug = createDebugger(config.get('app.name') + ':' + 'database');
 
 /**
  * Error codes.
@@ -71,7 +77,7 @@ export const getConnection = async function() {
     try {
       connection = await client;
     } catch (error) {
-      console.error(error);
+      debug(error);
     }
   }
 

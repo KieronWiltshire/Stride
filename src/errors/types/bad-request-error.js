@@ -16,4 +16,4 @@ export default class BadRequestError extends BaseError {
     this.message = 'The server could not process the request'
   }
 
-};
+}
