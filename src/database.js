@@ -24,7 +24,7 @@ const debug = createDebugger(config.get('app.name') + ':' + 'database');
  * Error codes.
  */
 export const noDatabaseHostSpecifiedCode = new Errors.ErrorCode('no_database_host_specified', { message: 'You must specify a host in order to establish a database connection' });
-export const databaseNotConnected = new Errors.ErrorCode('no_database_connection_established', { message: 'A database connection needs to be established' });
+export const databaseNotConnectedCode = new Errors.ErrorCode('no_database_connection_established', { message: 'A database connection needs to be established' });
 
 /**
  * Connection options
@@ -41,7 +41,7 @@ let connection = null;
 let connectionURL = null;
 
 if (options.user && options.password) {
-  connectionURL = options.user + ':' + options.password;
+  connectionURL = (options.user + ':' + options.password);
 }
 
 if (options.host) {
@@ -82,11 +82,21 @@ export const getConnection = async function() {
   }
 
   if (!connection) {
-    throw new Errors.InternalServerError().push(databaseNotConnected);
+    throw new Errors.InternalServerError().push(databaseNotConnectedCode);
   }
 
   return connection;
 };
+
+export const isConnected = async function() {
+  await getConnection();
+
+  if (connection) {
+    return connection.isConnected();
+  }
+
+  return false;
+}
 
 /**
  * Export connection

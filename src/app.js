@@ -18,7 +18,7 @@ import Context from '~/utilities/context';
 import MethodOverride from 'method-override';
 import ErrorResponse from '~/errors/response';
 import {default as createDebugger} from 'debug';
-import {hasDatabaseConnection, databaseNotConnectedCode} from './database';
+import * as Database from './database';
 
 /**
  * Load configurations
@@ -124,16 +124,16 @@ Application.use('/public', Express.static(publicDir));
  * allowing the request to continue through it's
  * lifecycle.
  */
-Application.use(function(request, response, next) {
-  if (hasDatabaseConnection()) {
+Application.use(async function(request, response, next) {
+  if (await Database.isConnected()) {
     next();
   } else {
-    next(new Errors.InternalServerError().push(databaseNotConnectedCode));
+    next(new Errors.InternalServerError().push(Database.databaseNotConnectedCode));
   }
 });
 
 // Apply router if after the middleware has been applied
-Application.use(Router);
+Application.use('/api', Router);
 
 /**
  * Redirect other calls to the application router, if a route cannot be found
@@ -158,12 +158,16 @@ Application.use(function(request, response, next) {
   next(new Errors.NotFoundError()); // Resource not found
 });
 
-// Apply a route response handler
-Application.use(function(error, request, response) {
+/**
+ * Apply a route error response handler
+ */
+/* eslint-disable no-unused-vars */
+Application.use(function(error, request, response, next) {
   debug(error);
   response.status(error.status || 500).json({
     error: ErrorResponse.format(error)
   });
 });
+/* eslint-enable */
 
 export default Application;
