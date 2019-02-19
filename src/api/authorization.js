@@ -40,7 +40,7 @@ class AuthorizationAPI extends Base {
   /**
    * Serialize {Guard}.
    *
-   * @param {Guard} guard
+   * @param {Guard|Object} guard
    * @return {Object}
    */
   _serialize(guard) {
@@ -80,7 +80,7 @@ class AuthorizationAPI extends Base {
    *
    * @param {number} limit
    * @param {number} offset
-   * @param {any} filter
+   * @param {string} type
    * @returns {Array<Guard>}
    */
   async index({ limit, offset, type } = {}) {
@@ -106,10 +106,9 @@ class AuthorizationAPI extends Base {
  /**
   * Create a new {Guard}.
   *
-  * @param {string} email
-  * @param {string} username
-  * @param {string} password
-  * @returns {User}
+  * @param {string} id
+  * @param {string} type
+  * @returns {Guard}
   */
   async create({ id, type }) {
     let validationErrors = [];
