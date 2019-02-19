@@ -24,6 +24,8 @@ class AuthorizationAPI extends Base {
     EventEmitter.call(this);
   }
 
+  
+
   // TODO:
 
 }
