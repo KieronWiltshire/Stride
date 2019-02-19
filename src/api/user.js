@@ -98,10 +98,10 @@ class UserAPI extends Base {
 
       if (exists.length <= 0) {
         let now = new Date();
-        let user = null;
+        let record = null;
 
         try {
-          user = await collection.insertOne({
+          record = await collection.insertOne({
             email,
             username,
             password,
@@ -116,16 +116,16 @@ class UserAPI extends Base {
           this.debug(error);
         }
 
-        if ((!user) || (user && !user.ops) || (user && user.ops && !user.ops[0])) {
+        if ((!record) || (record && !record.ops) || (record && record.ops && !record.ops[0])) {
           throw new Errors.InternalServerError();
         }
 
-        user = user.ops[0];
+        record = record.ops[0];
 
         // Throw event
-        this.emit('create', { user });
+        this.emit('create', { record });
 
-        return user;
+        return record;
       } else {
         for (let record of exists) {
           if ((record.username) && (record.username.toLowerCase() === username.toLowerCase()) && (validationErrors.indexOf('username') < 0)) {
