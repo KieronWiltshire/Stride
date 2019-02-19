@@ -1,6 +1,6 @@
 'use strict';
 
-import ErrorCode from './error-code';
+import ErrorCode from '~/errors/error-code';
 
 export default class BaseError extends Error {
 

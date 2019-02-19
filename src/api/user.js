@@ -1,6 +1,6 @@
 'use strict';
 
-import Base from './base';
+import Base from '~/api/base';
 import Bcrypt from 'bcrypt';
 import Errors from '~/errors';
 import Validator from 'validator';

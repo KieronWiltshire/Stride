@@ -2,9 +2,9 @@
 
 import Path from 'path';
 import Env from '~/env';
-import Errors from './index';
+import Errors from '~/errors';
 import Respondent from 'respondent';
-import BaseError from './base-error';
+import BaseError from '~/errors/base-error';
 import {default as createDebugger} from 'debug';
 
 /**

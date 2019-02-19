@@ -8,7 +8,7 @@ import Express from 'express';
 import { publicDir } from '~/app';
 import Respondent from 'respondent';
 import APIRouter from '~/routes/api';
-import * as Database from './database';
+import * as Database from '~/database';
 import ErrorResponse from '~/errors/response';
 import {default as createDebugger} from 'debug';
 

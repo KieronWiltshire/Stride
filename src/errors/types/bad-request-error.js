@@ -1,6 +1,6 @@
 'use strict';
 
-import BaseError from '../base-error';
+import BaseError from '~/errors/base-error';
 
 export default class BadRequestError extends BaseError {
 

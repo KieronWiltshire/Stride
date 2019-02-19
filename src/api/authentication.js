@@ -1,7 +1,7 @@
 'use strict';
 
-import Base from './base';
-import UserAPI from './user';
+import Base from '~/api/base';
+import UserAPI from '~/api/user';
 import Errors from '~/errors';
 import JWT from 'jsonwebtoken';
 import EventEmitter from 'events';

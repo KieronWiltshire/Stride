@@ -1,7 +1,7 @@
 'use strict';
 
 import _ from 'lodash';
-import Base from './base';
+import Base from '~/api/base';
 import EventEmitter from 'events';
 import Errors from '~/errors';
 import * as Database from '~/database';
