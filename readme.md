@@ -74,36 +74,6 @@ const config = new Respondent({ rootDir: Path.join(__dirname, 'config') });
 const debug = createDebugger(config.get('app.name') + ':' + 'your-namespace-can-go-here');
 ```
 
-### Request lifecycle
-
-> [Incoming Request]
-  The request comes in, it is handled by Express.
-
-> [Router]
-  The router then specifies what happens to the request depending on it's parameters.
-
-> [Middleware]
-  The request will pass through any defined middleware.
-
-> [Controller]
-  The request will be parsed accordingly, and passed to the relevant API function(s). If multiple API functions are called, then each function should be called in series. If an error is thrown/returned from an API method, then simply call the `next` callback with the error. This will pass the error to the error response handler. Here is an example:
-
-  ```JavaScript
-    import UserAPI from '../api/user';
-
-    function create(request, response, next) {
-      UserAPI.register({
-        username: request.body.username,
-        password: request.body.password
-      }).then(function(user) {
-        response.json(user);
-      }).catch(next);
-    }
-  ```
-
-> [API]
-  The API will perform it's operations, and return/throw any of the predefined errors. If the error context is known, then the error should contain the relevant error codes.
-
 # Testing
 
 > The application utilizes [Mocha][3] and [Chai][4] and [Chai-HTTP][5] to conduct it's unit tests.
