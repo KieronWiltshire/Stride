@@ -16,4 +16,4 @@ export default class ServiceUnavailableError extends BaseError {
     this.message = 'The service is temporarily unavailable';
   }
 
-};
+}

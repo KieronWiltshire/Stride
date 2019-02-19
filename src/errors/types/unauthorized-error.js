@@ -16,4 +16,4 @@ export default class UnauthorizedError extends BaseError {
     this.message = 'You are unauthorized to make that request';
   }
 
-};
+}

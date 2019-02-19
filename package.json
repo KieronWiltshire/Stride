@@ -14,6 +14,7 @@
     "stop": "forever stop ./build/bootstrap.js",
     "build": "gulp build",
     "dev": "nodemon --exec babel-node src/bootstrap.js --ignore node_modules",
+    "pretest": "eslint --ignore-path .gitignore .",
     "test": "mocha ./test/main.js --compilers js:babel-core/register",
     "mogront": "babel-node ./node_modules/mogront/build/bin/cli.js --config=\"mogront.config.js\" --template=\"es6\""
   },
@@ -68,6 +69,7 @@
     "babel-preset-es2015": "^6.24.1",
     "chai": "^4.0.2",
     "chai-http": "^3.0.0",
+    "eslint": "^5.13.0",
     "gulp": "^3.9.1",
     "gulp-babel": "^6.1.2",
     "mocha": "^3.2.0",

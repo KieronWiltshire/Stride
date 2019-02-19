@@ -1,13 +1,20 @@
 'use strict';
 
+import Path from 'path';
 import Env from '~/env';
 import Errors from './index';
-import Path from 'path';
 import Respondent from 'respondent';
-import {default as createDebugger} from 'debug';
 import BaseError from './base-error';
+import {default as createDebugger} from 'debug';
 
+/**
+ * Load configurations
+ */
 const config = new Respondent({ rootDir: Path.join(__dirname, '..', 'config'), env: Env });
+
+/**
+ * Debugger
+ */
 const debug = createDebugger(config.get('app.name') + ':' + 'errors:response');
 
 /**
@@ -54,7 +61,7 @@ export default class ErrorResponse {
       debug(error);
       error = new Errors.InternalServerError();
       error.push(new Errors.ErrorCode('contact_support', {
-        message: 'If this error persists, then please contact an administrator'
+        message: 'If this error persists then please contact an administrator'
       }));
     }
 
@@ -62,4 +69,4 @@ export default class ErrorResponse {
     return error;
   }
 
-};
+}

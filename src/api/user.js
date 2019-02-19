@@ -1,22 +1,13 @@
 'use strict';
 
-import _ from 'lodash';
-import Path from 'path';
-import EventEmitter from 'events';
-import Validator from 'validator';
-import Errors from '~/errors';
-import * as Database from '~/database';
-import Bcrypt from 'bcrypt';
-import RandomString from 'randomstring';
-import * as Mailer from '~/mailer';
 import Base from './base';
-import Env from '~/env';
-import Respondent from 'respondent';
-
-/**
- * Load configurations
- */
-const config = new Respondent({ rootDir: Path.join(__dirname, '..', 'config'), env: Env });
+import Bcrypt from 'bcrypt';
+import Errors from '~/errors';
+import Validator from 'validator';
+import EventEmitter from 'events';
+import * as Mailer from '~/mailer';
+import * as Database from '~/database';
+import RandomString from 'randomstring';
 
 /**
  * Error codes.
@@ -54,7 +45,7 @@ class UserAPI extends Base {
   async index({ limit, offset } = {}) {
     let connection = await Database.getConnection();
 
-    let db = connection.db(config.get('database.database', 'stride'));
+    let db = connection.db(this.getConfig().get('database.database', 'stride'));
     let collection = db.collection('users');
     let result = collection.find({});
 
@@ -101,7 +92,7 @@ class UserAPI extends Base {
     if (validationErrors.length <= 0) {
       let connection = await Database.getConnection();
 
-      let db = connection.db(config.get('database.database', 'stride'));
+      let db = connection.db(this.getConfig().get('database.database', 'stride'));
       let collection = db.collection('users');
       let exists = await collection.find({ $or: [{ username }, { email }] }).toArray();
 
@@ -122,7 +113,7 @@ class UserAPI extends Base {
             updatedAt: now,
           });
         } catch (error) {
-          console.error(error);
+          this.debug(error);
         }
 
         if ((!user) || (user && !user.ops) || (user && user.ops && !user.ops[0])) {
@@ -169,7 +160,7 @@ class UserAPI extends Base {
 
     let connection = await Database.getConnection();
 
-    let db = connection.db(config.get('database.database', 'stride'));
+    let db = connection.db(this.getConfig().get('database.database', 'stride'));
     let collection = db.collection('users');
     let result = await collection.findOne({ _id });
 
@@ -189,7 +180,7 @@ class UserAPI extends Base {
   async findByUsername({ username }) {
     let connection = await Database.getConnection();
 
-    let db = connection.db(config.get('database.database', 'stride'));
+    let db = connection.db(this.getConfig().get('database.database', 'stride'));
     let collection = db.collection('users');
     let result = await collection.findOne({ username });
 
@@ -209,7 +200,7 @@ class UserAPI extends Base {
   async findByEmail({ email }) {
     let connection = await Database.getConnection();
 
-    let db = connection.db(config.get('database.database', 'stride'));
+    let db = connection.db(this.getConfig().get('database.database', 'stride'));
     let collection = db.collection('users');
     let result = await collection.findOne({ email });
 
@@ -231,7 +222,7 @@ class UserAPI extends Base {
   async find({ param, value, regex = true } = {}) {
     let connection = await Database.getConnection();
 
-    let db = connection.db(config.get('database.database', 'stride'));
+    let db = connection.db(this.getConfig().get('database.database', 'stride'));
     let collection = db.collection('users');
 
     let filter = {};
@@ -287,7 +278,7 @@ class UserAPI extends Base {
     if (validationErrors.length <= 0) {
       let connection = await Database.getConnection();
 
-      let db = connection.db(config.get('database.database', 'stride'));
+      let db = connection.db(this.getConfig().get('database.database', 'stride'));
       let collection = db.collection('users');
       let $or = [];
 
@@ -349,11 +340,11 @@ class UserAPI extends Base {
 
     let connection = await Database.getConnection();
 
-    let db = connection.db(config.get('database.database', 'stride'));
+    let db = connection.db(this.getConfig().get('database.database', 'stride'));
     let collection = db.collection('users');
 
-    updatedUser = await collection.findOneAndUpdate({ _id }, { $set }, { returnOriginal: false });
-    updatedUser = updatedUser.value;
+    let updatedUser = await collection.findOneAndUpdate({ _id }, { $set }, { returnOriginal: false });
+        updatedUser = updatedUser.value;
 
     // Throw event
     this.emit('forgotPassword', { updatedUser });
@@ -386,7 +377,7 @@ class UserAPI extends Base {
     };
 
     try {
-      transport.sendMail(options);
+      transport.sendMail(mailOptions);
     } catch (error) {
       throw new Errors.InternalServerError().push(unableToSendPasswordResetTokenCode);
     }
@@ -407,9 +398,6 @@ class UserAPI extends Base {
       _id = Database.ObjectID(_id);
     }
 
-    let now = new Date();
-    let update = Object.assign({ updatedAt: now, sessionsValidAfter: now }, user);
-
     if (user.passwordResetToken === passwordResetToken) {
       let decodedToken = this.parsePasswordResetToken({ passwordResetToken });
 
@@ -428,14 +416,15 @@ class UserAPI extends Base {
 
         let connection = await Database.getConnection();
 
-        let db = connection.db(config.get('database.database', 'stride'));
+        let db = connection.db(this.getConfig().get('database.database', 'stride'));
         let collection = db.collection('users');
 
-        let $set = Object.assign({ password }, user);
+        let now = new Date();
+        let $set = Object.assign({ password, updatedAt: now, sessionsValidAfter: now }, user);
         delete $set._id;
 
         let updatedUser = await collection.findOneAndUpdate({ _id }, { $set }, { returnOriginal: false });
-        updatedUser = updatedUser.value;
+            updatedUser = updatedUser.value;
 
         // Throw event
         this.emit('resetPassword', { user, updatedUser });
@@ -507,7 +496,7 @@ class UserAPI extends Base {
     if (validationErrors.length <= 0) {
       let connection = await Database.getConnection();
 
-      let db = connection.db(config.get('database.database', 'stride'));
+      let db = connection.db(this.getConfig().get('database.database', 'stride'));
       let collection = db.collection('users');
       let exists = await collection.find({ email });
 
@@ -515,8 +504,8 @@ class UserAPI extends Base {
         let $set = Object.assign({ emailVerificationToken: this.generateEmailVerificationToken({ email }), updatedAt: new Date() }, user);
         delete $set._id;
 
-        updatedUser = await collection.findOneAndUpdate({ _id }, { $set }, { returnOriginal: false });
-        updatedUser = updatedUser.value;
+        let updatedUser = await collection.findOneAndUpdate({ _id }, { $set }, { returnOriginal: false });
+            updatedUser = updatedUser.value;
 
         // Throw event
         this.emit('changeEmail', { updatedUser });
@@ -563,43 +552,9 @@ class UserAPI extends Base {
     };
 
     try {
-      transport.sendMail(options);
+      transport.sendMail(mailOptions);
     } catch (error) {
       throw new Errors.InternalServerError().push(unableToSendEmailVerificationTokenCode);
-    }
-  }
-
-  /**
-   * Verify the email using the specified email verification token.
-   *
-   * @param {User} user
-   * @param {string} emailVerificationToken
-   * @return {User}
-   */
-  async verifyEmail({ user, emailVerificationToken }) {
-    let { _id } = user;
-
-    if (typeof _id === 'string') {
-      _id = Database.ObjectID(_id);
-    }
-
-    if (user.emailVerificationToken === emailVerificationToken) {
-      let connection = await Database.getConnection();
-
-      let db = connection.db(config.get('database.database', 'stride'));
-      let collection = db.collection('users');
-      let decodedToken = this.parseEmailVerificationToken({ emailVerificationToken });
-
-      let $set = Object.assign({ email: decodedToken.email, emailVerified: true, updatedAt: new Date()}, user);
-      let updatedUser = await collection.findOneAndUpdate({ _id }, { $set } , { returnOriginal: false });
-      updatedUser = updatedUser.value;
-
-      // Throw event
-      this.emit('verifyEmail', { user, updatedUser });
-
-      return updatedUser;
-    } else {
-      throw new Errors.ValidationError().push(userEmailVerificationTokenMismatchCode);
     }
   }
 
@@ -633,16 +588,19 @@ class UserAPI extends Base {
   async verifyEmail({ user, emailVerificationToken }) {
     let { _id } = user;
 
+    if (typeof _id === 'string') {
+      _id = Database.ObjectID(_id);
+    }
+
     if (user.emailVerificationToken === emailVerificationToken) {
       let connection = await Database.getConnection();
 
-      let db = connection.db(config.get('database.database', 'stride'));
+      let db = connection.db(this.getConfig().get('database.database', 'stride'));
       let collection = db.collection('users');
-
       let decodedToken = this.parseEmailVerificationToken({ emailVerificationToken });
 
-      let $set = Object.assign({ email: decodedToken.email, emailVerified: true, updatedAt: new Date() }, user)
-      let updatedUser = await collection.findOneAndUpdate({ _id }, { $set }, { returnOriginal: false });
+      let $set = Object.assign({ email: decodedToken.email, emailVerified: true, updatedAt: new Date()}, user);
+      let updatedUser = await collection.findOneAndUpdate({ _id }, { $set } , { returnOriginal: false });
       updatedUser = updatedUser.value;
 
       // Throw event

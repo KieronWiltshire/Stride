@@ -16,4 +16,4 @@ export default class ValidationError extends BaseError {
     this.message = 'A validation concern exists within the request context';
   }
 
-};
+}

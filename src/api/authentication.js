@@ -1,11 +1,10 @@
 'use strict';
 
-import _ from 'lodash';
+import Base from './base';
+import UserAPI from './user';
+import Errors from '~/errors';
 import JWT from 'jsonwebtoken';
 import EventEmitter from 'events';
-import Errors from '~/errors';
-import UserAPI from './user';
-import Base from './base';
 
 /**
  * Error codes.
@@ -128,13 +127,15 @@ class AuthenticationAPI extends Base {
         throw new Errors.UnauthorizedError().push(tokenRequiredCode);
       }
     } catch (error) {
+      this.debug(error);
+
       if (error instanceof JWT.JsonWebTokenError) {
         let errorCode = new Errors.ErrorCode(tokenInvalidCode.code, { message: error.message });
-        error = new Errors.ValidationError().push(errorCode);
-      }
 
-      this.debug(error);
-      return Promise.reject(error);
+        throw new Errors.ValidationError().push(errorCode);
+      } else {
+        throw error;
+      }
     }
   }
 

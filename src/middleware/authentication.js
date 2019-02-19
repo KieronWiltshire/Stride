@@ -1,9 +1,19 @@
 'use strict';
 
+import Path from 'path';
 import Errors from '~/errors';
-import {default as AuthenticationAPI, tokenRequiredCode} from '~/api/authentication';
+import Respondent from 'respondent';
 import {default as createDebugger} from 'debug';
+import {default as AuthenticationAPI, tokenRequiredCode} from '~/api/authentication';
 
+/**
+ * Load configurations
+ */
+const config = new Respondent({ rootDir: Path.join(__dirname, '..', 'config') });
+
+/**
+ * Debugger
+ */
 const debug = createDebugger(config.get('app.name') + ':' + 'middleware:authentication');
 
 /**

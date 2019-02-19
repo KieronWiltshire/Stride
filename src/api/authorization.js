@@ -1,10 +1,9 @@
 'use strict';
 
-import _ from 'lodash';
-import EventEmitter from 'events';
-import Errors from '~/errors';
-import { Guard, Permission } from 'gelert';
 import Base from './base';
+import EventEmitter from 'events';
+// import Errors from '~/errors';
+// import { Guard, Permission } from 'gelert';
 
 /**
  * Error codes.

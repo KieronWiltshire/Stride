@@ -16,4 +16,4 @@ export default class ForbiddenError extends BaseError {
     this.message = 'You are forbidden to make that request';
   }
 
-};
+}

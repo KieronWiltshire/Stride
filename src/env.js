@@ -1,9 +1,10 @@
+/* eslint no-console: ["error", { allow: ["warn", "error"] }] */
+
 'use strict';
 
 import Path from 'path';
 import DotEnv from 'dotenv';
 import DotEnvParseVariables from 'dotenv-parse-variables';
-import Respondent from 'respondent';
 
 /**
  * Will log an error to the console and exit the process.
@@ -12,11 +13,11 @@ import Respondent from 'respondent';
  */
 function logEnvErrorAndExit(err) {
   console.error('Unable to load the necessary variables from the .env file');
-  if (error) {
+  if (err) {
     console.error(err);
   }
   process.exit(1);
-};
+}
 
 /**
  * Retrieve .env variables

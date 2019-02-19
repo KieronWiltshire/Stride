@@ -66,4 +66,4 @@ export default class Context {
     return ((v !== undefined) && (v !== null));
   }
 
-};
+}
