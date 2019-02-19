@@ -361,13 +361,7 @@ class UserAPI extends Base {
   async sendPasswordResetToken({ user }) {
     let transport = await Mailer.getTransport();
     let url = this.getUrl();
-    let html = await this.render({
-      view: 'emails.user.password-reset',
-      data: {
-        url,
-        user,
-      }
-    });
+    let html = await this.render('emails.user.password-reset', { url, user });
 
     let mailOptions = {
       from: this.getConfig().get('mail.sender', 'no-reply@example.com'),
@@ -536,13 +530,7 @@ class UserAPI extends Base {
   async sendEmailVerificationToken({ user }) {
     let transport = await Mailer.getTransport();
     let url = this.getUrl();
-    let html = await this.render({
-      view: 'emails.user.email-verification',
-      data: {
-        url,
-        user,
-      }
-    });
+    let html = await this.render('emails.user.email-verification', { url, user });
 
     let mailOptions = {
       from: this.getConfig().get('mail.sender', 'no-reply@example.com'),

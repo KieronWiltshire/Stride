@@ -89,13 +89,12 @@ export const getConnection = async function() {
 };
 
 export const isConnected = async function() {
-  await getConnection();
-
-  if (connection) {
+  try {
+    let connection = await getConnection();
     return connection.isConnected();
+  } catch (error) {
+    return false;
   }
-
-  return false;
 }
 
 /**

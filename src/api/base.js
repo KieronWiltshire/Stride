@@ -104,7 +104,7 @@ export default class Base extends EventEmitter {
    *
    * @throws {Error}
    */
-  async render({ view, data = {} }) {
+  async render(view, data) {
     return new Promise(function(resolve, reject) {
       Application.render(view, data, function(error, html) {
         if (error) {

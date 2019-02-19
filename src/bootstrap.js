@@ -4,6 +4,7 @@ import OS from 'os';
 import Path from 'path';
 import Env from '~/env';
 import Bootit from 'bootit';
+import Router from '~/router';
 import Greenlock from 'greenlock';
 import Respondent from 'respondent';
 import {default as Application, io} from '~/app';
@@ -12,6 +13,11 @@ import {default as Application, io} from '~/app';
  * Load configurations
  */
 const config = new Respondent({ rootDir: Path.join(__dirname, 'config'), env: Env });
+
+/**
+ * Apply the application router before booting the application.
+ */
+Application.use('/', Router);
 
 /**
  * Bootstrap
