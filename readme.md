@@ -9,10 +9,7 @@
 
 #### Serving front-end content
 
-In order to serve front-end content, simply create a `public` directory within your application's source/build path and place the content within the newly created directory. Please note that any non-defined routes will by default redirect to this directory. Here is a list of routes that cannot be overridden by default:
-
-- `/api` - redirects to any defined api end-points
-- `/public` - redirects to the public directory
+In order to serve front-end content, simply create a `public` directory within your application's source/build path and place the content within the newly created directory. Please note that any non-defined routes will by default redirect to this directory. You can change this default behavior from inside `src/router`.
 
 #### Security
 
