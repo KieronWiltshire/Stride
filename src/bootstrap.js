@@ -20,7 +20,7 @@ const config = new Respondent({ rootDir: Path.join(__dirname, 'config'), env: En
 Application.use('/', Router);
 
 /**
- * Bootstrap
+ * Bootstrap the server
  */
 let options = {
   io: io,
