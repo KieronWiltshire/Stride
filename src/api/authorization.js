@@ -53,19 +53,35 @@ class AuthorizationAPI extends Base {
 
     let db = connection.db(this.getConfig().get('database.database', 'stride'));
     let collection = db.collection('guards');
-    let result = collection.find({ type });
+    let lookup = [{
+      $match: {
+        type
+      }
+    }];
 
     if (limit) {
       limit = this.validatePaginationParameter({ type: 'limit', value: limit });
-      result.limit(limit);
+      lookup.push({ $limit: limit });
     }
 
     if (offset) {
       offset = this.validatePaginationParameter({ type: 'offset', value: offset });
-      result.skip(offset);
+      lookup.push({ $skip: offset });
     }
 
-    return result.toArray();
+    lookup.push({ $graphLookup: {
+      from: 'guards',
+      startWith: '$inheritence',
+      connectFromField: 'inheritence',
+      connectToField: '_id',
+      as: 'associatedChildren',
+      depthField: 'depth'
+    }});
+
+    let result = await collection.aggregate(lookup);
+        result = (await result.toArray());
+
+    return this._nestGuardsByInheritence(result);
   }
 
  /**
@@ -146,12 +162,26 @@ class AuthorizationAPI extends Base {
     let connection = await Database.getConnection();
 
     let db = connection.db(this.getConfig().get('database.database', 'stride'));
-    let collection = db.collection('users');
+    let collection = db.collection('guards');
 
     let filter = {};
         filter[param] = (regex ? { $regex: value } : value);
 
-    return await collection.find(filter);
+    let result = await collection.aggregate([
+      { $match: filter },
+      { $graphLookup: {
+          from: 'guards',
+          startWith: '$inheritence',
+          connectFromField: 'inheritence',
+          connectToField: '_id',
+          as: 'associatedChildren',
+          depthField: 'depth'
+      }}
+    ]);
+
+    result = (await result.toArray());
+
+    return this._nestGuardsByInheritence(result);
   }
 
   /**
@@ -179,7 +209,8 @@ class AuthorizationAPI extends Base {
           startWith: '$inheritence',
           connectFromField: 'inheritence',
           connectToField: '_id',
-          as: 'inheritence'
+          as: 'associatedChildren',
+          depthField: 'depth'
       }}
     ]);
 
@@ -215,8 +246,10 @@ class AuthorizationAPI extends Base {
           startWith: '$inheritence',
           connectFromField: 'inheritence',
           connectToField: '_id',
-          as: 'inheritence'
-      }}
+          as: 'associatedChildren',
+          depthField: 'depth'
+      }},
+      { $unwind: '$inheritence' }
     ]);
 
     result = (await result.toArray());
@@ -371,6 +404,7 @@ class AuthorizationAPI extends Base {
         let instance = new Guard({ id: name, type });
 
         // TODO: populate instance
+        // this is next
 
         return instance;
       }
@@ -389,12 +423,104 @@ class AuthorizationAPI extends Base {
    * @returns {Object}
    */
   _nestGuardsByInheritence(guards) {
-    // TODO:
-    console.log(guards);
+    for (let i = 0; i < guards.length; i++) {
+      let g = guards[i];
+
+      g.associatedChildren = g.associatedChildren.sort((a, b) => (a.depth < b.depth));
+
+      let depth = 0;
+
+      g.associatedChildren.forEach((ac) => {
+        depth = (ac.depth > depth) ? ac.depth : depth;
+      });
+
+      while (depth >= 0) {
+        for (let n = 0; n < g.associatedChildren.length; n++) {
+          let ac = g.associatedChildren[n];
+
+          if (ac.depth === (depth - 1)) {
+            let directChildren = [];
+
+            ac.inheritence.forEach((inheritenceId) => {
+              for (let m = 0; m < g.associatedChildren.length; m++) {
+                let ac2 = g.associatedChildren[m];
+                if (inheritenceId.equals(ac2._id)) {
+                  let dc = _.extend({}, ac2);
+                  delete dc.depth;
+
+                  directChildren.push(dc);
+                }
+              }
+            });
+
+            ac.inheritence = directChildren;
+          }
+        }
+
+        depth--;
+      }
+    }
+
+    let parents = [];
+
+    for (let i = 0; i < guards.length; i++) {
+      let g = guards[i];
+
+      for (let n = 0; n < g.associatedChildren.length; n++) {
+        let ac = g.associatedChildren[n];
+
+        if (Array.isArray(g.inheritence)) {
+          g.inheritence.forEach((inheritenceId) => {
+            if (inheritenceId.equals(ac._id)) {
+              let p = _.extend({}, g);
+                  p.inheritence = ac;
+
+                  delete p.associatedChildren;
+
+              parents.push(p);
+            }
+          });
+        } else if (g.inheritence.equals(ac._id)) {
+            let p = _.extend({}, g);
+                p.inheritence = ac;
+
+                delete p.associatedChildren;
+
+            parents.push(p);
+          }
+      }
+    }
+
+    let combined = [];
+
+    for (let i = 0; i < parents.length; i++) {
+      let p = parents[i];
+      let add = false;
+
+      delete p.inheritence.depth;
+
+      if (combined.length > 0) {
+        combined.forEach((c) => {
+          if (p._id.equals(c._id)) {
+            c.inheritence.push(p.inheritence);
+          } else {
+            add = true;
+          }
+        });
+      } else {
+        add = true;
+      }
+
+      if (add) {
+        let a = _.extend({}, p);
+            a.inheritence = [p.inheritence];
+
+        combined.push(a);
+      }
+    }
+
+    return combined;
   }
-
-
-  // TODO:
 
 }
 
