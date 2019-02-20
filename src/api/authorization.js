@@ -53,68 +53,19 @@ class AuthorizationAPI extends Base {
 
     let db = connection.db(this.getConfig().get('database.database', 'stride'));
     let collection = db.collection('guards');
-    let lookup = [{
-      $match: {
-        type
-      }
-    }];
+    let result = collection.find({ type });
 
     if (limit) {
       limit = this.validatePaginationParameter({ type: 'limit', value: limit });
-      lookup.push({ $limit: limit });
+      result.limit(limit);
     }
 
     if (offset) {
       offset = this.validatePaginationParameter({ type: 'offset', value: offset });
-      lookup.push({ $skip: offset });
+      result.skip(offset);
     }
 
-    lookup.push({ $graphLookup: {
-      from: 'guards',
-      startWith: '$inheritence',
-      connectFromField: '$inheritence',
-      connectToField: '_id',
-      as: 'inheritence'
-    }});
-
-    let result = await collection.aggregate(lookup);
-
-    return this._nestGuardsByInheritence(result);
-  }
-
-  /**
-   * Serialize {Guard}.
-   *
-   * @param {Guard|Object} guard
-   * @return {Object}
-   */
-  _serialize(guard) {
-    let _id = (guard instanceof Guard) ? guard.getId() : guard._id;
-    let type = (guard instanceof Guard) ? guard.getType() : guard.type;
-
-    if (_id && type) {
-      let inheritence = [];
-      let permissions = [];
-
-      if (guard instanceof Guard) {
-        guard.guards().forEach((g) => {
-          inheritence.push(g.getId());
-        });
-
-        guard.permissions().forEach((p) => {
-          permissions.push(p.getValue());
-        });
-      }
-
-      return _.extend({}, {
-        _id,
-        type,
-        inheritence,
-        permissions,
-      });
-    } else {
-      throw new Errors.InternalServerError().push(cannotSerializeGuard);
-    }
+    return result.toArray();
   }
 
  /**
@@ -195,33 +146,50 @@ class AuthorizationAPI extends Base {
     let connection = await Database.getConnection();
 
     let db = connection.db(this.getConfig().get('database.database', 'stride'));
-    let collection = db.collection('guards');
+    let collection = db.collection('users');
 
     let filter = {};
         filter[param] = (regex ? { $regex: value } : value);
 
-    let result = await collection.aggregate([
-      { $match: filter },
-      { $graphLookup: {
-            from: 'guards',
-            startWith: '$inheritence',
-            connectFromField: '$inheritence',
-            connectToField: '_id',
-            as: 'inheritence'
-      }}
-    ]);
-
-    return this._nestGuardsByInheritence(result);
+    return await collection.find(filter);
   }
 
   /**
-   * Nest the array of {Guard} objects by inheritence.
+   * Find a {Guard} by identifier.
    *
-   * @param {Array} guards
-   * @returns {Object}
+   * @param {string} _id
+   * @returns {Guard}
    */
-  _nestGuardsByInheritence(guards) {
-    // TODO:
+  async findById({ _id }) {
+    if (typeof _id === 'string') {
+      _id = Database.ObjectID(_id);
+    }
+
+    let connection = await Database.getConnection();
+
+    let db = connection.db(this.getConfig().get('database.database', 'stride'));
+    let collection = db.collection('guards');
+
+    let result = await collection.aggregate([
+      { $match: {
+          _id
+      }},
+      { $graphLookup: {
+          from: 'guards',
+          startWith: '$inheritence',
+          connectFromField: 'inheritence',
+          connectToField: '_id',
+          as: 'inheritence'
+      }}
+    ]);
+
+    result = (await result.toArray());
+
+    if (result.length > 0) {
+      return this._nestGuardsByInheritence(result);
+    } else {
+      throw new Errors.NotFoundError().push(guardNotFoundCode);
+    }
   }
 
   /**
@@ -239,66 +207,24 @@ class AuthorizationAPI extends Base {
 
     let result = await collection.aggregate([
       { $match: {
-        reference,
-        type
+          reference,
+          type
       }},
       { $graphLookup: {
-            from: 'guards',
-            startWith: '$inheritence',
-            connectFromField: '$inheritence',
-            connectToField: '_id',
-            as: 'inheritence'
+          from: 'guards',
+          startWith: '$inheritence',
+          connectFromField: 'inheritence',
+          connectToField: '_id',
+          as: 'inheritence'
       }}
     ]);
 
-    if (result) {
+    result = (await result.toArray());
+
+    if (result.length > 0) {
       return this._nestGuardsByInheritence(result);
     } else {
       throw new Errors.NotFoundError().push(guardNotFoundCode);
-    }
-  }
-
-  /**
-   * Deserialize object into a {Guard} instance.
-   *
-   * @param {Object} guard
-   * @returns {Guard}
-   */
-  async _deserialize(guard) {
-    if (guard instanceof Guard) {
-      throw new Errors.InternalServerError().push(guardAlreadyDeserialized);
-    } else {
-      let validationErrors = [];
-      let { name, type, inheritence, permissions } = guard;
-
-      if (!(name && typeof name === 'string')) {
-        validationErrors.push('name');
-      }
-
-      if (!(type && typeof type === 'string')) {
-        validationErrors.push('type');
-      }
-
-      if (!(inheritence && Array.isArray(inheritence))) {
-        validationErrors.push('inheritence');
-      }
-
-      if (!(type && Array.isArray(permissions))) {
-        validationErrors.push('permissions');
-      }
-
-      if (validationErrors.length <= 0) {
-        let instance = new Guard({ id: name, type });
-
-        // TODO: populate instance
-
-        return instance;
-      }
-
-      let meta = guardCannotBeCreatedCode.getMeta();
-          meta.fields = validationErrors;
-
-      throw new Errors.ValidationError().push(guardCannotBeCreatedCode.clone().setMeta(meta));
     }
   }
 
@@ -362,7 +288,7 @@ class AuthorizationAPI extends Base {
         // TODO: add inheritence to the guard instances.
         // if success, save the guard
         // if failed, throw error
-        
+
       } else {
         let newErrorCode = guardNotFoundCode.clone();
             newErrorCode.parameter = 'child';
@@ -375,6 +301,96 @@ class AuthorizationAPI extends Base {
 
       throw new Errors.NotFoundError().push(newErrorCode);
     }
+  }
+
+  /**
+   * Serialize {Guard}.
+   *
+   * @param {Guard|Object} guard
+   * @return {Object}
+   */
+  _serialize(guard) {
+    let _id = (guard instanceof Guard) ? guard.getId() : guard._id;
+    let type = (guard instanceof Guard) ? guard.getType() : guard.type;
+
+    if (_id && type) {
+      let inheritence = [];
+      let permissions = [];
+
+      if (guard instanceof Guard) {
+        guard.guards().forEach((g) => {
+          inheritence.push(g.getId());
+        });
+
+        guard.permissions().forEach((p) => {
+          permissions.push(p.getValue());
+        });
+      }
+
+      return _.extend({}, {
+        _id,
+        type,
+        inheritence,
+        permissions,
+      });
+    } else {
+      throw new Errors.InternalServerError().push(cannotSerializeGuard);
+    }
+  }
+
+  /**
+   * Deserialize object into a {Guard} instance.
+   *
+   * @param {Object} guard
+   * @returns {Guard}
+   */
+  async _deserialize(guard) {
+    if (guard instanceof Guard) {
+      throw new Errors.InternalServerError().push(guardAlreadyDeserialized);
+    } else {
+      let validationErrors = [];
+      let { name, type, inheritence, permissions } = guard;
+
+      if (!(name && typeof name === 'string')) {
+        validationErrors.push('name');
+      }
+
+      if (!(type && typeof type === 'string')) {
+        validationErrors.push('type');
+      }
+
+      if (!(inheritence && Array.isArray(inheritence))) {
+        validationErrors.push('inheritence');
+      }
+
+      if (!(type && Array.isArray(permissions))) {
+        validationErrors.push('permissions');
+      }
+
+      if (validationErrors.length <= 0) {
+        let instance = new Guard({ id: name, type });
+
+        // TODO: populate instance
+
+        return instance;
+      }
+
+      let meta = guardCannotBeCreatedCode.getMeta();
+          meta.fields = validationErrors;
+
+      throw new Errors.ValidationError().push(guardCannotBeCreatedCode.clone().setMeta(meta));
+    }
+  }
+
+  /**
+   * Nest the array of {Guard} objects by inheritence.
+   *
+   * @param {Array} guards
+   * @returns {Object}
+   */
+  _nestGuardsByInheritence(guards) {
+    // TODO:
+    console.log(guards);
   }
 
 
