@@ -4,7 +4,6 @@ import _ from 'lodash';
 import Base from '~/api/base';
 import Errors from '~/errors';
 import EventEmitter from 'events';
-import Validator from 'validator';
 import * as Database from '~/database';
 import { Guard, Permission } from 'gelert';
 
@@ -18,6 +17,8 @@ export const cannotSaveGuard = new Errors.ErrorCode('cannot_save_guard', { messa
 export const guardAlreadyDeserialized = new Errors.ErrorCode('guard_already_deserialized', { message: 'The specified guard has already been deserialized' });
 export const guardCannotBeDeserializedCode = new Errors.ErrorCode('cannot_deserialize_guard', { message: 'The guard could not be deserialized' });
 export const guardCannotInheritCode = new Errors.ErrorCode('cannot_inherit_guard', { message: 'The specified parent guard already inherits the specified child guard' });
+export const guardDoesNotInheritCode = new Errors.ErrorCode('guard_does_not_inherit', { message: 'The specified parent guard does not directly inherit the specified child guard' });
+export const failureDuringInheritenceNestingCode = new Errors.ErrorCode('failure_during_inheritence_nesting_code', { message: 'Callee failed during inheritence nesting process', level: 'SEVERE' });
 
 /**
  * Authorization API
@@ -35,7 +36,6 @@ class AuthorizationAPI extends Base {
   /**
    * TODO:
    *
-   * removeInheritence
    * addPermission
    * removePermission
    * hasPermission
@@ -218,7 +218,13 @@ class AuthorizationAPI extends Base {
     result = (await result.toArray());
 
     if (result.length > 0) {
-      return this._nestGuardsByInheritence(result)[0];
+      let nestedResult = this._nestGuardsByInheritence(result);
+
+      if (nestedResult.length > 1) {
+        throw new Errors.InternalServerError().push(failureDuringInheritenceNestingCode);
+      } else {
+        return nestedResult[0];
+      }
     } else {
       throw new Errors.NotFoundError().push(guardNotFoundCode);
     }
@@ -255,7 +261,13 @@ class AuthorizationAPI extends Base {
     result = (await result.toArray());
 
     if (result.length > 0) {
-      return this._nestGuardsByInheritence(result)[0];
+      let nestedResult = this._nestGuardsByInheritence(result);
+
+      if (nestedResult.length > 1) {
+        throw new Errors.InternalServerError().push(failureDuringInheritenceNestingCode);
+      } else {
+        return nestedResult[0];
+      }
     } else {
       throw new Errors.NotFoundError().push(guardNotFoundCode);
     }
@@ -328,6 +340,56 @@ class AuthorizationAPI extends Base {
 
           return !!(saved);
         }
+      } else {
+        let newErrorCode = guardNotFoundCode.clone();
+            newErrorCode.parameter = 'child';
+
+        throw new Errors.NotFoundError().push(newErrorCode);
+      }
+    } else {
+      let newErrorCode = guardNotFoundCode.clone();
+          newErrorCode.parameter = 'parent';
+
+      throw new Errors.NotFoundError().push(newErrorCode);
+    }
+  }
+
+  /**
+   * Remove a child {Guard} from it's parent {Guard}.
+   *
+   * @param {Guard} parent
+   * @param {Guard} child
+   * @returns {boolean}
+   */
+  async removeInheritence(parent, child) {
+    let parentGuard = null;
+    let childGuard = null;
+
+    try {
+      parentGuard = await this.findByReferenceAndType(parent);
+      childGuard = await this.findByReferenceAndType(child);
+    } catch (error) {
+      if (!(error instanceof Errors.NotFoundError)) {
+        throw error;
+      }
+    }
+
+    if (parentGuard) {
+      if (childGuard) {
+        parentGuard = await this._deserialize(parentGuard);
+        childGuard = await this._deserialize(childGuard);
+
+        if (parentGuard.equals(childGuard)) {
+          throw new Errors.ValidationError().push(guardCannotInheritCode);
+        } else if (parentGuard.hasGuard(childGuard)) {
+            parentGuard.removeGuard(childGuard);
+
+            let saved = await this._save(parentGuard);
+
+            return !!(saved);
+          } else {
+            throw new Errors.ValidationError().push(guardDoesNotInheritCode);
+          }
       } else {
         let newErrorCode = guardNotFoundCode.clone();
             newErrorCode.parameter = 'child';
@@ -422,8 +484,6 @@ class AuthorizationAPI extends Base {
           inheritence.forEach((child) => {
             children.push(this._deserialize(inheritence[child]));
           });
-
-          console.log(inheritence);
 
           (await Promise.all(children)).forEach((childGuard) => {
             instance.addGuard(childGuard);
