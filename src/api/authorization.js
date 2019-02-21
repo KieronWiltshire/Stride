@@ -18,7 +18,10 @@ export const guardAlreadyDeserialized = new Errors.ErrorCode('guard_already_dese
 export const guardCannotBeDeserializedCode = new Errors.ErrorCode('cannot_deserialize_guard', { message: 'The guard could not be deserialized' });
 export const guardCannotInheritCode = new Errors.ErrorCode('cannot_inherit_guard', { message: 'The specified parent guard already inherits the specified child guard' });
 export const guardDoesNotInheritCode = new Errors.ErrorCode('guard_does_not_inherit', { message: 'The specified parent guard does not directly inherit the specified child guard' });
-export const failureDuringInheritenceNestingCode = new Errors.ErrorCode('failure_during_inheritence_nesting_code', { message: 'Callee failed during inheritence nesting process', level: 'SEVERE' });
+export const failureDuringInheritenceNestingCode = new Errors.ErrorCode('failure_during_inheritence_nesting', { message: 'Callee failed during inheritence nesting process', level: 'SEVERE' });
+export const guardAlreadyContainsPermissionCode = new Errors.ErrorCode('guard_already_contains_permission', { message: 'The specified guard already directly inherits the specified permission' });
+export const guardDoesNotContainPermissionCode = new Errors.ErrorCode('guard_does_not_contain_permission', { message: 'The specified guard does not directly inherit the specified permission' });
+export const permissionCannotBeCreatedCode = new Errors.ErrorCode('permission_cannot_be_created', { message: 'The permission could not be created' });
 
 /**
  * Authorization API
@@ -32,14 +35,6 @@ class AuthorizationAPI extends Base {
     super('authorization');
     EventEmitter.call(this);
   }
-
-  /**
-   * TODO:
-   *
-   * addPermission
-   * removePermission
-   * hasPermission
-   */
 
   /**
    * Retrieve {Guard} index.
@@ -112,14 +107,14 @@ class AuthorizationAPI extends Base {
 
       if (exists.length <= 0) {
         let now = new Date();
-        let serializedGuard = await this._serialize(new Guard({ id: new Database.ObjectID(), type }));
+        let serializedGuard = await this.serialize(new Guard({ id: reference, type }));
         let guard = null;
 
         try {
-          guard = await collection.insertOne(_.extend({}, serializedGuard), {
+          guard = await collection.insertOne(_.extend({}, serializedGuard, {
             createdAt: now,
             updatedAt: now,
-          });
+          }));
         } catch (error) {
           this.debug(error);
         }
@@ -286,9 +281,9 @@ class AuthorizationAPI extends Base {
       let db = connection.db(this.getConfig().get('database.database', 'stride'));
       let collection = db.collection('guards');
 
-      let serializedGuard = await this._serialize(guard);
+      let serializedGuard = await this.serialize(guard);
 
-      let { _id } = await this.findByReferenceAndType({ reference: serializedGuard._id, type: serializedGuard.type }); // throws not found error if the guard could not be found
+      let { _id } = await this.findByReferenceAndType({ reference: serializedGuard.reference, type: serializedGuard.type }); // throws not found error if the guard could not be found
 
       let $set = Object.assign({ updatedAt: new Date() }, serializedGuard);
           delete $set._id;
@@ -300,7 +295,7 @@ class AuthorizationAPI extends Base {
       // Throw event
       this.emit('_save', { guard: serializedGuard, updatedGuard });
 
-      return updatedGuard;
+      return (await this.findByReferenceAndType({ reference: updatedGuard.reference, type: updatedGuard.type }));
     } else {
       throw new Errors.InternalServerError().push(cannotSaveGuard);
     }
@@ -328,8 +323,8 @@ class AuthorizationAPI extends Base {
 
     if (parentGuard) {
       if (childGuard) {
-        parentGuard = await this._deserialize(parentGuard);
-        childGuard = await this._deserialize(childGuard);
+        parentGuard = await this.deserialize(parentGuard);
+        childGuard = await this.deserialize(childGuard);
 
         if (parentGuard.equals(childGuard) || parentGuard.doesInherit(childGuard)) {
           throw new Errors.ValidationError().push(guardCannotInheritCode);
@@ -338,7 +333,11 @@ class AuthorizationAPI extends Base {
 
           let saved = await this._save(parentGuard);
 
-          return !!(saved);
+          if (saved) {
+            this.emit('addInheritence', { parent, child, parentInstance: parentGuard, childInstance: childGuard });
+          }
+
+          return saved;
         }
       } else {
         let newErrorCode = guardNotFoundCode.clone();
@@ -376,8 +375,8 @@ class AuthorizationAPI extends Base {
 
     if (parentGuard) {
       if (childGuard) {
-        parentGuard = await this._deserialize(parentGuard);
-        childGuard = await this._deserialize(childGuard);
+        parentGuard = await this.deserialize(parentGuard);
+        childGuard = await this.deserialize(childGuard);
 
         if (parentGuard.equals(childGuard)) {
           throw new Errors.ValidationError().push(guardCannotInheritCode);
@@ -386,7 +385,11 @@ class AuthorizationAPI extends Base {
 
             let saved = await this._save(parentGuard);
 
-            return !!(saved);
+            if (saved) {
+              this.emit('removeInheritence', { parent, child, parentInstance: parentGuard, childInstance: childGuard });
+            }
+
+            return saved;
           } else {
             throw new Errors.ValidationError().push(guardDoesNotInheritCode);
           }
@@ -405,13 +408,115 @@ class AuthorizationAPI extends Base {
   }
 
   /**
+   * Add a {Permission} to the specified {Guard}.
+   *
+   * @param {Guard} guard
+   * @param {string|Gelert.Permission} permission
+   * @returns {boolean}
+   */
+  async addPermission(guard, permission) {
+    guard = await this.findByReferenceAndType(guard);
+
+    let g = await this.deserialize(guard);
+
+    if (typeof permission === 'string') {
+      permission = new Permission(permission);
+    } else if (!(permission instanceof Permission)) {
+      let meta = permissionCannotBeCreatedCode.getMeta();
+          meta.fields = [
+            'permission'
+          ];
+
+      throw new Errors.ValidationError().push(permissionCannotBeCreatedCode.clone().setMeta(meta));
+    }
+
+    if (g.containsPermission(permission)) {
+      throw new Errors.ValidationError().push(guardAlreadyContainsPermissionCode);
+    } else {
+      g.addPermission(permission);
+
+      let saved = await this._save(g);
+
+      if (saved) {
+        this.emit('addPermission', { guard, guardInstance: g, permissionInstance: permission });
+      }
+
+      return saved;
+    }
+  }
+
+  /**
+   * Remove a {Permission} from the specified {Guard}.
+   *
+   * @param {Guard} guard
+   * @param {string} permission
+   * @returns {boolean}
+   */
+  async removePermission(guard, permission) {
+    guard = await this.findByReferenceAndType(guard);
+
+    let g = await this.deserialize(guard);
+
+    if (typeof permission === 'string') {
+      permission = new Permission(permission);
+    } else if (!(permission instanceof Permission)) {
+      let meta = permissionCannotBeCreatedCode.getMeta();
+          meta.fields = [
+            'permission'
+          ];
+
+      throw new Errors.ValidationError().push(permissionCannotBeCreatedCode.clone().setMeta(meta));
+    }
+
+    if (g.containsPermission(permission)) {
+      g.addPermission(permission);
+
+      let saved = await this._save(g);
+
+      if (saved) {
+        this.emit('removePermission', { guard, guardInstance: g, permission: permission });
+      }
+
+      return saved;
+    } else {
+      throw new Errors.ValidationError().push(guardDoesNotContainPermissionCode);
+    }
+  }
+
+  /**
+   * Check if a {Guard} has access to the specified {Permission}.
+   *
+   * @param {Guard} guard
+   * @param {string|Gelert.Permission} permission
+   * @returns {boolean}
+   */
+  async hasPermission(guard, permission) {
+    guard = await this.findByReferenceAndType({ reference: guard.reference, type: guard.type });
+
+    let g = await this.deserialize(guard);
+
+    if (typeof permission === 'string') {
+      permission = new Permission(permission);
+    } else if (!(permission instanceof Permission)) {
+      let meta = permissionCannotBeCreatedCode.getMeta();
+          meta.fields = [
+            'permission'
+          ];
+
+      throw new Errors.ValidationError().push(permissionCannotBeCreatedCode.clone().setMeta(meta));
+    }
+
+    return g.hasPermission(permission);
+  }
+
+  /**
    * Serialize {Guard}.
    *
    * @param {Guard|Object} guard
    * @return {Object}
    */
-  async _serialize(guard) {
-    let _id = (guard instanceof Guard) ? guard.getId() : guard._id;
+  async serialize(guard) {
+    let _id = (guard instanceof Guard) ? guard.getId() : guard.reference;
     let type = (guard instanceof Guard) ? guard.getType() : guard.type;
 
     if (_id && type) {
@@ -435,7 +540,7 @@ class AuthorizationAPI extends Base {
       }
 
       return _.extend({}, {
-        _id,
+        reference: _id,
         type,
         inheritence,
         permissions,
@@ -451,7 +556,7 @@ class AuthorizationAPI extends Base {
    * @param {Object} guard
    * @returns {Guard}
    */
-  async _deserialize(guard) {
+  async deserialize(guard) {
     if (guard instanceof Guard) {
       throw new Errors.InternalServerError().push(guardAlreadyDeserialized);
     } else {
@@ -459,6 +564,9 @@ class AuthorizationAPI extends Base {
 
       if (guard) {
         let validationErrors = [];
+
+        guard = await this.findByReferenceAndType(guard);
+
         let { reference, type, inheritence, permissions } = guard;
 
         if (!(reference && typeof reference === 'string')) {
@@ -482,7 +590,7 @@ class AuthorizationAPI extends Base {
           let children = [];
 
           inheritence.forEach((child) => {
-            children.push(this._deserialize(inheritence[child]));
+            children.push(this.deserialize(child));
           });
 
           (await Promise.all(children)).forEach((childGuard) => {
@@ -490,7 +598,7 @@ class AuthorizationAPI extends Base {
           });
 
           permissions.forEach((p) => {
-            instance.addPermission(p);
+            instance.addPermission(new Permission(p));
           });
 
           return instance;
@@ -521,11 +629,29 @@ class AuthorizationAPI extends Base {
         depth = (ac.depth > depth) ? ac.depth : depth;
       });
 
+      let wasDepthZero = (depth === 0);
+
       while (depth >= 0) {
         for (let n = 0; n < g.associatedChildren.length; n++) {
           let ac = g.associatedChildren[n];
 
-          if (ac.depth === (depth - 1)) {
+          if (wasDepthZero) {
+            let directChildren = [];
+
+            g.inheritence.forEach((inheritenceId) => {
+              for (let m = 0; m < g.associatedChildren.length; m++) {
+                let ac2 = g.associatedChildren[m];
+                if (inheritenceId.equals(ac2._id)) {
+                  let dc = _.extend({}, ac2);
+                  delete dc.depth;
+
+                  directChildren.push(dc);
+                }
+              }
+            });
+
+            g.inheritence = directChildren;
+          } else if (ac.depth === (depth - 1)) {
             let directChildren = [];
 
             ac.inheritence.forEach((inheritenceId) => {
