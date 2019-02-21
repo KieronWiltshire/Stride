@@ -309,12 +309,16 @@ class AuthorizationAPI extends Base {
    * @returns {boolean}
    */
   async addInheritence(parent, child) {
-    let parentGuard = null;
-    let childGuard = null;
+    let parentGuard = (parent.hasOwnProperty('createdAt') && parent.hasOwnProperty('updatedAt')) ? parent : null;
+    let childGuard = (child.hasOwnProperty('createdAt') && child.hasOwnProperty('updatedAt')) ? child : null;
 
     try {
-      parentGuard = await this.findByReferenceAndType(parent);
-      childGuard = await this.findByReferenceAndType(child);
+      if (!parentGuard) {
+        parentGuard = await this.findByReferenceAndType(parent);
+      }
+      if (!childGuard) {
+        childGuard = await this.findByReferenceAndType(child);
+      }
     } catch (error) {
       if (!(error instanceof Errors.NotFoundError)) {
         throw error;
@@ -361,12 +365,16 @@ class AuthorizationAPI extends Base {
    * @returns {boolean}
    */
   async removeInheritence(parent, child) {
-    let parentGuard = null;
-    let childGuard = null;
+    let parentGuard = (parent.hasOwnProperty('createdAt') && parent.hasOwnProperty('updatedAt')) ? parent : null;
+    let childGuard = (child.hasOwnProperty('createdAt') && child.hasOwnProperty('updatedAt')) ? child : null;
 
     try {
-      parentGuard = await this.findByReferenceAndType(parent);
-      childGuard = await this.findByReferenceAndType(child);
+      if (!parentGuard) {
+        parentGuard = await this.findByReferenceAndType(parent);
+      }
+      if (!childGuard) {
+        childGuard = await this.findByReferenceAndType(child);
+      }
     } catch (error) {
       if (!(error instanceof Errors.NotFoundError)) {
         throw error;
@@ -415,7 +423,9 @@ class AuthorizationAPI extends Base {
    * @returns {boolean}
    */
   async addPermission(guard, permission) {
-    guard = await this.findByReferenceAndType(guard);
+    if (!(guard.hasOwnProperty('createdAt') && guard.hasOwnProperty('updatedAt'))) {
+      guard = await this.findByReferenceAndType(guard);
+    }
 
     let g = await this.deserialize(guard);
 
@@ -453,7 +463,9 @@ class AuthorizationAPI extends Base {
    * @returns {boolean}
    */
   async removePermission(guard, permission) {
-    guard = await this.findByReferenceAndType(guard);
+    if (!(guard.hasOwnProperty('createdAt') && guard.hasOwnProperty('updatedAt'))) {
+      guard = await this.findByReferenceAndType(guard);
+    }
 
     let g = await this.deserialize(guard);
 
@@ -491,7 +503,9 @@ class AuthorizationAPI extends Base {
    * @returns {boolean}
    */
   async hasPermission(guard, permission) {
-    guard = await this.findByReferenceAndType({ reference: guard.reference, type: guard.type });
+    if (!(guard.hasOwnProperty('createdAt') && guard.hasOwnProperty('updatedAt'))) {
+      guard = await this.findByReferenceAndType({ reference: guard.reference, type: guard.type });
+    }
 
     let g = await this.deserialize(guard);
 
@@ -565,7 +579,9 @@ class AuthorizationAPI extends Base {
       if (guard) {
         let validationErrors = [];
 
-        guard = await this.findByReferenceAndType(guard);
+        if (!(guard.hasOwnProperty('createdAt') && guard.hasOwnProperty('updatedAt'))) {
+          guard = await this.findByReferenceAndType(guard);
+        }
 
         let { reference, type, inheritence, permissions } = guard;
 
