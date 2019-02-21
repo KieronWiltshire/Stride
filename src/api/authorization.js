@@ -16,6 +16,8 @@ export const guardCannotBeCreatedCode = new Errors.ErrorCode('cannot_create_guar
 export const guardNotFoundCode = new Errors.ErrorCode('guard_not_found', { message: 'The specified guard could not be found' });
 export const cannotSaveGuard = new Errors.ErrorCode('cannot_save_guard', { message: 'The specified guard could not be saved' });
 export const guardAlreadyDeserialized = new Errors.ErrorCode('guard_already_deserialized', { message: 'The specified guard has already been deserialized' });
+export const guardCannotBeDeserializedCode = new Errors.ErrorCode('cannot_deserialize_guard', { message: 'The guard could not be deserialized' });
+export const guardCannotInheritCode = new Errors.ErrorCode('cannot_inherit_guard', { message: 'The specified parent guard already inherits the specified child guard' });
 
 /**
  * Authorization API
@@ -33,7 +35,6 @@ class AuthorizationAPI extends Base {
   /**
    * TODO:
    *
-   * addInheritence
    * removeInheritence
    * addPermission
    * removePermission
@@ -111,14 +112,14 @@ class AuthorizationAPI extends Base {
 
       if (exists.length <= 0) {
         let now = new Date();
+        let serializedGuard = await this._serialize(new Guard({ id: new Database.ObjectID(), type }));
         let guard = null;
 
         try {
-          guard = await collection.insertOne(_.extend({}, this._serialize(new Guard({ id: new Database.ObjectID(), type })), {
-            reference,
+          guard = await collection.insertOne(_.extend({}, serializedGuard), {
             createdAt: now,
             updatedAt: now,
-          }));
+          });
         } catch (error) {
           this.debug(error);
         }
@@ -217,7 +218,7 @@ class AuthorizationAPI extends Base {
     result = (await result.toArray());
 
     if (result.length > 0) {
-      return this._nestGuardsByInheritence(result);
+      return this._nestGuardsByInheritence(result)[0];
     } else {
       throw new Errors.NotFoundError().push(guardNotFoundCode);
     }
@@ -248,14 +249,13 @@ class AuthorizationAPI extends Base {
           connectToField: '_id',
           as: 'associatedChildren',
           depthField: 'depth'
-      }},
-      { $unwind: '$inheritence' }
+      }}
     ]);
 
     result = (await result.toArray());
 
     if (result.length > 0) {
-      return this._nestGuardsByInheritence(result);
+      return this._nestGuardsByInheritence(result)[0];
     } else {
       throw new Errors.NotFoundError().push(guardNotFoundCode);
     }
@@ -274,11 +274,12 @@ class AuthorizationAPI extends Base {
       let db = connection.db(this.getConfig().get('database.database', 'stride'));
       let collection = db.collection('guards');
 
-      let serializedGuard = this._serialize(guard);
+      let serializedGuard = await this._serialize(guard);
 
-      let { _id } = await this.find({ name: serializedGuard.name, type: serializedGuard.type }); // throws not found error if the guard could not be found
+      let { _id } = await this.findByReferenceAndType({ reference: serializedGuard._id, type: serializedGuard.type }); // throws not found error if the guard could not be found
 
       let $set = Object.assign({ updatedAt: new Date() }, serializedGuard);
+          delete $set._id;
 
       let updatedGuard = await collection.findOneAndUpdate({ _id }, { $set }, { returnOriginal: false });
 
@@ -318,10 +319,15 @@ class AuthorizationAPI extends Base {
         parentGuard = await this._deserialize(parentGuard);
         childGuard = await this._deserialize(childGuard);
 
-        // TODO: add inheritence to the guard instances.
-        // if success, save the guard
-        // if failed, throw error
+        if (parentGuard.equals(childGuard) || parentGuard.doesInherit(childGuard)) {
+          throw new Errors.ValidationError().push(guardCannotInheritCode);
+        } else {
+          parentGuard.addGuard(childGuard);
 
+          let saved = await this._save(parentGuard);
+
+          return !!(saved);
+        }
       } else {
         let newErrorCode = guardNotFoundCode.clone();
             newErrorCode.parameter = 'child';
@@ -342,7 +348,7 @@ class AuthorizationAPI extends Base {
    * @param {Guard|Object} guard
    * @return {Object}
    */
-  _serialize(guard) {
+  async _serialize(guard) {
     let _id = (guard instanceof Guard) ? guard.getId() : guard._id;
     let type = (guard instanceof Guard) ? guard.getType() : guard.type;
 
@@ -351,8 +357,14 @@ class AuthorizationAPI extends Base {
       let permissions = [];
 
       if (guard instanceof Guard) {
+        let ops = [];
+
         guard.guards().forEach((g) => {
-          inheritence.push(g.getId());
+          ops.push(this.findByReferenceAndType({ reference: g.getId(), type: g.getType() }));
+        });
+
+        (await Promise.all(ops)).forEach((childGuard) => {
+          inheritence.push(childGuard._id);
         });
 
         guard.permissions().forEach((p) => {
@@ -381,38 +393,53 @@ class AuthorizationAPI extends Base {
     if (guard instanceof Guard) {
       throw new Errors.InternalServerError().push(guardAlreadyDeserialized);
     } else {
-      let validationErrors = [];
-      let { name, type, inheritence, permissions } = guard;
+      let meta = guardCannotBeDeserializedCode.getMeta();
 
-      if (!(name && typeof name === 'string')) {
-        validationErrors.push('name');
-      }
+      if (guard) {
+        let validationErrors = [];
+        let { reference, type, inheritence, permissions } = guard;
 
-      if (!(type && typeof type === 'string')) {
-        validationErrors.push('type');
-      }
+        if (!(reference && typeof reference === 'string')) {
+          validationErrors.push('reference');
+        }
 
-      if (!(inheritence && Array.isArray(inheritence))) {
-        validationErrors.push('inheritence');
-      }
+        if (!(type && typeof type === 'string')) {
+          validationErrors.push('type');
+        }
 
-      if (!(type && Array.isArray(permissions))) {
-        validationErrors.push('permissions');
-      }
+        if (!(inheritence && Array.isArray(inheritence))) {
+          validationErrors.push('inheritence');
+        }
 
-      if (validationErrors.length <= 0) {
-        let instance = new Guard({ id: name, type });
+        if (!(permissions && Array.isArray(permissions))) {
+          validationErrors.push('permissions');
+        }
 
-        // TODO: populate instance
-        // this is next
+        if (validationErrors.length <= 0) {
+          let instance = new Guard({ id: reference, type });
+          let children = [];
 
-        return instance;
-      }
+          inheritence.forEach((child) => {
+            children.push(this._deserialize(inheritence[child]));
+          });
 
-      let meta = guardCannotBeCreatedCode.getMeta();
+          console.log(inheritence);
+
+          (await Promise.all(children)).forEach((childGuard) => {
+            instance.addGuard(childGuard);
+          });
+
+          permissions.forEach((p) => {
+            instance.addPermission(p);
+          });
+
+          return instance;
+        } else {
           meta.fields = validationErrors;
+        }
+      }
 
-      throw new Errors.ValidationError().push(guardCannotBeCreatedCode.clone().setMeta(meta));
+      throw new Errors.ValidationError().push(guardCannotBeDeserializedCode.clone().setMeta(meta));
     }
   }
 
@@ -466,28 +493,33 @@ class AuthorizationAPI extends Base {
     for (let i = 0; i < guards.length; i++) {
       let g = guards[i];
 
-      for (let n = 0; n < g.associatedChildren.length; n++) {
-        let ac = g.associatedChildren[n];
+      if (guards.length > 1) {
+        for (let n = 0; n < g.associatedChildren.length; n++) {
+          let ac = g.associatedChildren[n];
 
-        if (Array.isArray(g.inheritence)) {
-          g.inheritence.forEach((inheritenceId) => {
-            if (inheritenceId.equals(ac._id)) {
-              let p = _.extend({}, g);
-                  p.inheritence = ac;
+          if (Array.isArray(g.inheritence)) {
+            g.inheritence.forEach((inheritenceId) => {
+              if (inheritenceId.equals(ac._id)) {
+                let p = _.extend({}, g);
+                    p.inheritence = ac;
+                    delete p.associatedChildren;
 
-                  delete p.associatedChildren;
-
-              parents.push(p);
-            }
-          });
-        } else if (g.inheritence.equals(ac._id)) {
+                parents.push(p);
+              }
+            });
+          } else if (g.inheritence.equals(ac._id)) {
             let p = _.extend({}, g);
                 p.inheritence = ac;
-
                 delete p.associatedChildren;
 
             parents.push(p);
           }
+        }
+      } else {
+        let p = _.extend({}, g);
+            delete p.associatedChildren;
+
+        parents.push(p);
       }
     }
 
@@ -513,7 +545,10 @@ class AuthorizationAPI extends Base {
 
       if (add) {
         let a = _.extend({}, p);
-            a.inheritence = [p.inheritence];
+
+        if (!Array.isArray(p.inheritence)) {
+          a.inheritence = [p.inheritence];
+        }
 
         combined.push(a);
       }
