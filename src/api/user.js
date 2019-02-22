@@ -1,6 +1,6 @@
 'use strict';
 
-import Base from './base';
+import Base from '~/api/base';
 import Bcrypt from 'bcrypt';
 import Errors from '~/errors';
 import Validator from 'validator';
@@ -148,6 +148,26 @@ class UserAPI extends Base {
   }
 
   /**
+   * Find a {User} by an unknown parameter.
+   *
+   * @param {number|string} param
+   * @param {number|string} value
+   * @param {boolean} regex
+   * @returns {User}
+   */
+  async find({ param, value, regex = true } = {}) {
+    let connection = await Database.getConnection();
+
+    let db = connection.db(this.getConfig().get('database.database', 'stride'));
+    let collection = db.collection('users');
+
+    let filter = {};
+        filter[param] = (regex ? { $regex: value } : value);
+
+    return await collection.find(filter);
+  }
+
+  /**
    * Find a {User} by identifier.
    *
    * @param {string} _id
@@ -209,26 +229,6 @@ class UserAPI extends Base {
     } else {
       throw new Errors.NotFoundError().push(userNotFoundCode);
     }
-  }
-
-  /**
-   * Find a {User} by an unknown parameter.
-   *
-   * @param {number|string} param
-   * @param {number|string} value
-   * @param {boolean} regex
-   * @returns {User}
-   */
-  async find({ param, value, regex = true } = {}) {
-    let connection = await Database.getConnection();
-
-    let db = connection.db(this.getConfig().get('database.database', 'stride'));
-    let collection = db.collection('users');
-
-    let filter = {};
-        filter[param] = (regex ? { $regex: value } : value);
-
-    return await collection.find(filter);
   }
 
   /**
