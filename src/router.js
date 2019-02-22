@@ -2,25 +2,11 @@
 
 import Fs from 'fs';
 import Path from 'path';
-import Env from '~/env';
 import Errors from '~/errors';
 import Express from 'express';
 import { publicDir } from '~/app';
-import Respondent from 'respondent';
 import APIRouter from '~/routes/api';
 import * as Database from './database';
-import ErrorResponse from '~/errors/response';
-import {default as createDebugger} from 'debug';
-
-/**
- * Load configurations
- */
-export const config = new Respondent({ rootDir: Path.join(__dirname, 'config'), env: Env });
-
-/**
- * Debugger
- */
-const debug = createDebugger(config.get('app.name') + ':' + 'router');
 
 /**
  * Initialize the router.
@@ -70,17 +56,5 @@ Router.use(function(request, response, next) {
 Router.use(function(request, response, next) {
   next(new Errors.NotFoundError()); // Resource not found
 });
-
-/**
- * Apply a route error response handler
- */
-/* eslint-disable no-unused-vars */
-Router.use(function(error, request, response, next) {
-  debug(error);
-  response.status(error.status || 500).json({
-    error: ErrorResponse.format(error)
-  });
-});
-/* eslint-enable */
 
 export default Router;

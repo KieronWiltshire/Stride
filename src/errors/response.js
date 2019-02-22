@@ -69,4 +69,22 @@ export default class ErrorResponse {
     return error;
   }
 
+  /**
+   * The error response handler.
+   *
+   * @param {Error} error
+   * @param {Request} request
+   * @param {Response} response
+   * @param {function} next
+   * @returns {object}
+   */
+  /* eslint-disable no-unused-vars */
+  static handler(error, request, response, next) {
+    debug(error);
+    response.status(error.status || 500).json({
+      error: ErrorResponse.format(error)
+    });
+  }
+  /* eslint-enable */
+
 }
