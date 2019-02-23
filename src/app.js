@@ -94,11 +94,7 @@ Application.use(Cors());
  * Apply context to request object
  */
 Application.use(function(request, response, next) {
-  request['req-ctx'] = new Context();
-
-  request.getContext = function() {
-    return request['req-ctx'];
-  };
+  request = Context(request);
 
   next();
 });

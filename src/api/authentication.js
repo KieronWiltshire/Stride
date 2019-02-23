@@ -87,7 +87,7 @@ class AuthenticationAPI extends Base {
           decodedToken.iat = Date.now();
 
           let token = JWT.sign(decodedToken, this.getConfig().get('app.key'), this.getConfig().get('jwt', {}));
-          this.emit('refresh', decodedToken.user, token);
+          this.emit('refresh', decodedToken.sub, token);
           return Promise.resolve(token);
         }
       } else {
