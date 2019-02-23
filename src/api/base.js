@@ -12,7 +12,7 @@ import {default as createDebugger} from 'debug';
 /**
  * Load configurations
  */
-const config = new Respondent({ rootDir: Path.join(__dirname, 'config'), env: Env });
+const config = new Respondent({ rootDir: Path.join(__dirname, '..', 'config'), env: Env });
 
 /**
  * Base class which contains shared code

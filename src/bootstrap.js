@@ -11,6 +11,11 @@ import ErrorResponse from '~/errors/response';
 import {default as Application, io} from '~/app';
 
 /**
+ * Begin listening for events
+ */
+import '~/listeners';
+
+/**
  * Load configurations
  */
 const config = new Respondent({ rootDir: Path.join(__dirname, 'config'), env: Env });

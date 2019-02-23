@@ -1,9 +1,12 @@
 'use strict';
 
-import Chai from 'chai';
+/* eslint-disable */
+
+import * as Chai from 'chai';
 import HTTPMock from 'node-mocks-http';
 
 import Context from '~/utilities/context';
+import UserAPI from '~/api/user';
 import AuthenticationAPI from '~/api/authentication';
 import AuthenticationMiddleware from '~/middleware/authentication';
 
@@ -24,6 +27,7 @@ describe('authentication', () => {
         let error = (request instanceof Error) ? request : null;
 
         // TODO:
+        Chai.assert.throws(error, error);
 
         done(error);
       }
@@ -31,3 +35,4 @@ describe('authentication', () => {
   });
 
 });
+/* eslint-enable */

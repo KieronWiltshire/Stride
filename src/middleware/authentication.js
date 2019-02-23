@@ -4,7 +4,7 @@ import Path from 'path';
 import Errors from '~/errors';
 import Respondent from 'respondent';
 import {default as createDebugger} from 'debug';
-import {default as AuthenticationAPI, tokenRequiredCode} from '~/api/authentication';
+import AuthenticationAPI, {tokenRequiredCode} from '~/api/authentication';
 
 /**
  * Load configurations

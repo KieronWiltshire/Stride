@@ -1,6 +1,6 @@
 'use strict';
 
-import '~/listeners';
+// import '~/listeners';
 import Path from 'path';
 import Env from '~/env';
 import Cors from 'cors';
