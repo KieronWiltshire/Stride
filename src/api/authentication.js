@@ -13,6 +13,8 @@ export const tokenInvalidCode = new Errors.ErrorCode('token_invalid', { message:
 export const tokenMalformedCode = new Errors.ErrorCode('token_malformed', { message: 'The specified token does not match the initial blueprint' });
 export const tokenExpiredCode = new Errors.ErrorCode('token_expired', { message: 'The specified token is no longer valid' });
 export const tokenRequiredCode = new Errors.ErrorCode('token_required', { message: 'An authorization token is required' });
+export const tokenSubjectNotFoundCode = new Errors.ErrorCode('token_subject_not_found', { message: 'Unable to find the calling subject' });
+export const invalidSubjectType = new Errors.ErrorCode('invalid_subject_type', { message: 'An invalid subject type was specified' });
 
 /**
  * Authentication API
@@ -31,14 +33,24 @@ class AuthenticationAPI extends Base {
    * Generate an authentication token based on
    * the user supplied id supplied.
    *
-   * @param {number|string} subject The user's unique identifier
+   * @param {number|string} subject The subject's unique identifier
+   * @param {string} subjectType The type of the specified subject
    * @returns {string} token
    */
-  generate({ subject }) {
+  generate({ subject, subjectType }) {
     let payload = {
       'sub': subject,
       'iat': Date.now()
     };
+
+    // Add the subject type to the payload
+    if (subjectType) {
+      if (typeof subjectType === 'string') {
+        payload.subtyp = subjectType.toLowerCase();
+      } else {
+        throw new Errors.InternalServerError().push(invalidSubjectType);
+      }
+    }
 
     // Get the jwt options
     let jwtOptions = this.getConfig().get('jwt', {});
@@ -88,14 +100,15 @@ class AuthenticationAPI extends Base {
 
           let token = JWT.sign(decodedToken, this.getConfig().get('app.key'), this.getConfig().get('jwt', {}));
           this.emit('refresh', decodedToken.sub, token);
-          return Promise.resolve(token);
+          return token;
         }
       } else {
         throw new Errors.UnauthorizedError().push(tokenRequiredCode);
       }
     } catch (error) {
       this.debug(error);
-      return Promise.reject(error);
+
+      throw error;
     }
   }
 
@@ -106,36 +119,55 @@ class AuthenticationAPI extends Base {
    * @returns {Promise<Object>} decoded token
    */
   async verify({ token }) {
-    try {
-      if (token) {
-        let decodedToken = JWT.verify(token, this.getConfig().get('app.key'));
-        if (decodedToken.sub) {
-          let user = await UserAPI.findById(decodedToken.sub);
+    if (token) {
+      let decodedToken = null;
 
-          decodedToken.sub = user;
-          decodedToken.iat = new Date(decodedToken.iat);
+      try {
+        decodedToken = JWT.verify(token, this.getConfig().get('app.key'));
+      } catch (error) {
+        this.debug(error);
 
-          if (decodedToken.iat >= user.sessionsValidAfter) {
-            return Promise.resolve(decodedToken);
+        if (error instanceof JWT.JsonWebTokenError) {
+          let errorCode = new Errors.ErrorCode(tokenInvalidCode.code, { message: error.message });
+
+          throw new Errors.ValidationError().push(errorCode);
+        } else {
+          throw error;
+        }
+      }
+
+      if (decodedToken && decodedToken.sub) {
+        let subject = null;
+        let jwtValidAfter = null;
+
+        if (decodedToken.subtyp && decodedToken.subtyp.toLowerCase() === 'user') {
+          try {
+            subject = await UserAPI.findById(decodedToken.sub);
+            jwtValidAfter = subject.sessionsValidAfter;
+          } catch (error) {
+            this.debug(error);
+
+            throw new Errors.NotFoundError().push(tokenSubjectNotFoundCode);
+          }
+        }
+
+        decodedToken.sub = (subject) ? subject : decodedToken.sub;
+        decodedToken.iat = new Date(decodedToken.iat);
+
+        if (jwtValidAfter) {
+          if (decodedToken.iat >= jwtValidAfter) {
+            return decodedToken;
           } else {
             throw new Errors.UnauthorizedError().push(tokenExpiredCode);
           }
         } else {
-          throw new Errors.ValidationError().push(tokenMalformedCode);
+          return decodedToken;
         }
       } else {
-        throw new Errors.UnauthorizedError().push(tokenRequiredCode);
+        throw new Errors.ValidationError().push(tokenMalformedCode);
       }
-    } catch (error) {
-      this.debug(error);
-
-      if (error instanceof JWT.JsonWebTokenError) {
-        let errorCode = new Errors.ErrorCode(tokenInvalidCode.code, { message: error.message });
-
-        throw new Errors.ValidationError().push(errorCode);
-      } else {
-        throw error;
-      }
+    } else {
+      throw new Errors.UnauthorizedError().push(tokenRequiredCode);
     }
   }
 

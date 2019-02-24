@@ -2,6 +2,6 @@
 
 /* eslint-disable */
 
-require('./middleware/authentication');
+require('./authentication');
 
 /* eslint-enable */
