@@ -72,11 +72,7 @@ export default (async function(request, response, next) {
   try {
     let decodedToken = await AuthenticationAPI.verify({ token });
 
-    /* eslint-disable */
-    console.log(decodedToken);
-    /* eslint-enable */
-
-    request.getContext().set('user', decodedToken.sub);
+    request.getContext().set('authentication', decodedToken);
 
     return next();
   } catch (error) {

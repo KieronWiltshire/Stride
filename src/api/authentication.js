@@ -37,7 +37,7 @@ class AuthenticationAPI extends Base {
    * @param {string} subjectType The type of the specified subject
    * @returns {string} token
    */
-  async generate({ subject, subjectType }) {
+  generate({ subject, subjectType }) {
     try {
       let payload = {
         'sub': subject,
@@ -146,18 +146,16 @@ class AuthenticationAPI extends Base {
         throw new Errors.ValidationError().push(tokenMalformedCode);
       }
 
-      let subject = null;
-      let jwtValidAfter = null;
+      let subject = decodedToken.sub;
+
+      let jwtValidAfter = new Date(decodedToken.iat);
+          jwtValidAfter.setDate(jwtValidAfter.getDate() - 1);
 
       if (decodedToken.subtyp) {
         try {
           if (decodedToken.subtyp.toLowerCase() === 'user') {
             subject = await UserAPI.findById(decodedToken.sub);
             jwtValidAfter = subject.sessionsValidAfter;
-          } else {
-            subject = decodedToken.sub;
-            jwtValidAfter = new Date(decodedToken.iat);
-            jwtValidAfter.setDate(jwtValidAfter.getDate() - 1);
           }
         } catch (error) {
           this.debug(error);

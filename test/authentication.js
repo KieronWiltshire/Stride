@@ -13,25 +13,22 @@ import AuthenticationMiddleware from '~/middleware/authentication';
 describe('authentication', () => {
 
   it('...', (done) => {
-    let token = AuthenticationAPI.generate({ subject: 1, subjectType: 'apikey' });
+    let token = AuthenticationAPI.generate({ subject: 1 });
 
-    AuthenticationMiddleware(
-      Context(HTTPMock.createRequest({
-        method: 'GET',
-        headers: {
-          authorization: 'Bearer '.concat(token)
-        }
-      })),
-      HTTPMock.createResponse(),
-      (request) => {
-        let error = (request instanceof Error) ? request : null;
-
-        // TODO:
-        // Chai.assert.throws(error, error);
-
-        done(error);
+    let request = Context(HTTPMock.createRequest({
+      method: 'GET',
+      headers: {
+        authorization: 'Bearer '.concat(token)
       }
-    );
+    }));
+
+    let response = HTTPMock.createResponse();
+
+    AuthenticationMiddleware(request, response, (error) => {
+      // TODO:
+
+      done(error);
+    });
   });
 
 });
