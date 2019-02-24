@@ -1,6 +1,6 @@
 'use strict';
 
-import AuthenticationTests from './authentication';
+import AuthenticationTests from './suites/authentication';
 
 /**
  * Execute test suites
