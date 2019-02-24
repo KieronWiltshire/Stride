@@ -1,7 +1,8 @@
 'use strict';
 
-/* eslint-disable */
+import AuthenticationTests from './authentication';
 
-require('./authentication');
-
-/* eslint-enable */
+/**
+ * Execute test suites
+ */
+describe('authentication tests', AuthenticationTests);

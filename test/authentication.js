@@ -10,9 +10,12 @@ import UserAPI from '~/api/user';
 import AuthenticationAPI from '~/api/authentication';
 import AuthenticationMiddleware from '~/middleware/authentication';
 
-describe('authentication', () => {
+/**
+ * Authentication Test Suite
+ */
+export default () => {
 
-  it('...', (done) => {
+  it('should do something to test authentication middleware ...', (done) => {
     let token = AuthenticationAPI.generate({ subject: 1 });
 
     let request = Context(HTTPMock.createRequest({
@@ -25,11 +28,12 @@ describe('authentication', () => {
     let response = HTTPMock.createResponse();
 
     AuthenticationMiddleware(request, response, (error) => {
-      // TODO:
+      if (!error) {
+        // chai
+      }
 
       done(error);
     });
   });
 
-});
-/* eslint-enable */
+};
