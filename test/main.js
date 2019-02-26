@@ -8,6 +8,7 @@ import MogrontConfig from '../mogront.config.js';
 import Respondent from 'respondent';
 
 // Tests
+import UserTests from './suites/user';
 import AuthenticationTests from './suites/authentication';
 
 /**
@@ -39,6 +40,7 @@ describe('Tests', () => {
   /**
    * Test suites
    */
+  describe('user tests', UserTests);
   describe('authentication tests', AuthenticationTests);
 
 });
