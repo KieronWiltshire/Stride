@@ -15,7 +15,7 @@
     "build": "gulp build",
     "dev": "nodemon --exec babel-node src/server.js",
     "pretest": "eslint --ignore-path .gitignore .",
-    "test": "mocha ./test/main.js --compilers js:babel-core/register",
+    "test": "mocha ./test/main.js --require babel-core/register",
     "mogront": "babel-node ./node_modules/mogront/build/bin/cli.js --config=\"mogront.config.js\" --template=\"es6\""
   },
   "author": "Kieron Wiltshire",
@@ -31,6 +31,7 @@
     "dotenv": "^6.2.0",
     "dotenv-parse-variables": "^0.2.0",
     "express": "^4.16.4",
+    "forever": "^0.15.3",
     "fs-extra": "^7.0.1",
     "gelert": "^2.0.0",
     "greenlock": "^2.6.7",
@@ -50,15 +51,16 @@
     "validator": "^10.11.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-core": "^6.26.3",
+    "@babel/cli": "^7.2.3",
+    "@babel/core": "^7.3.4",
+    "@babel/preset-env": "^7.3.4",
+    "@babel/register": "^7.0.0",
     "babel-plugin-add-module-exports": "^1.0.0",
     "babel-plugin-root-import": "^6.1.0",
     "babel-plugin-transform-async-to-generator": "^6.24.1",
     "babel-plugin-transform-builtin-extend": "^1.1.2",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-export-extensions": "^6.22.0",
-    "babel-preset-env": "^1.7.0",
     "chai": "^4.2.0",
     "chai-http": "^4.2.1",
     "eslint": "^5.14.1",
@@ -70,7 +72,7 @@
   },
   "babel": {
     "presets": [
-      "env"
+      "@babel/preset-env"
     ],
     "ignore": [
       "node_modules"

@@ -8,24 +8,34 @@ import Babel from 'gulp-babel';
 let distDir = Path.join(__dirname, 'build');
 
 /**
- * Build the application
+ * Clean the directory and remove all
+ * build related files.
  */
-Gulp.task('build', ['transpile']);
+const clean = () => new Promise((resolve) => resolve(Fs.removeSync(distDir)));
 
 /**
- * Transpile the application
+ * Transpile the source into executable
+ * javascript.
  */
-Gulp.task('transpile', ['clean'], function() {
+const transpile = function() {
   return Gulp.src([
       'src/**/*'
     ])
     .pipe(Babel())
     .pipe(Gulp.dest(distDir));
-});
+};
+
+/**
+ * Build the application
+ */
+Gulp.task('build', Gulp.series(transpile));
+
+/**
+ * Transpile the application
+ */
+Gulp.task('transpile', Gulp.series(clean), transpile);
 
 /**
  * Clean the environment
  */
-Gulp.task('clean', function() {
-  Fs.removeSync(distDir);
-});
+Gulp.task('clean', clean);
