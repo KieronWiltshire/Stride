@@ -1,19 +1,12 @@
 'use strict';
 
-import Path from 'path';
-import Env from '~/env';
+import {config} from '~/app';
 import Errors from '~/errors';
 import MongoDB from 'mongodb';
-import Respondent from 'respondent';
 import {default as createDebugger} from 'debug';
 
 const MongoClient = MongoDB.MongoClient;
 export const ObjectID = MongoDB.ObjectID;
-
-/**
- * Load configurations
- */
-const config = new Respondent({ rootDir: Path.join(__dirname, 'config'), env: Env });
 
 /**
  * Debugger

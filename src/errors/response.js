@@ -1,16 +1,9 @@
 'use strict';
 
-import Path from 'path';
-import Env from '~/env';
+import {config} from '~/app';
 import Errors from '~/errors';
-import Respondent from 'respondent';
 import BaseError from '~/errors/base-error';
 import {default as createDebugger} from 'debug';
-
-/**
- * Load configurations
- */
-const config = new Respondent({ rootDir: Path.join(__dirname, '..', 'config'), env: Env });
 
 /**
  * Debugger

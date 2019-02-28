@@ -65,8 +65,9 @@
     "babel-plugin-transform-async-to-generator": "^6.22.0",
     "babel-plugin-transform-builtin-extend": "^1.1.2",
     "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-plugin-transform-export-extensions": "^6.22.0",
     "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-latest": "^6.24.1",
     "chai": "^4.0.2",
     "chai-http": "^3.0.0",
     "eslint": "^5.13.0",
@@ -78,13 +79,13 @@
   },
   "babel": {
     "presets": [
-      "es2015"
+      "latest"
     ],
     "plugins": [
       "add-module-exports",
-      "transform-runtime",
       "transform-async-to-generator",
       "transform-class-properties",
+      "transform-export-extensions",
       [
         "babel-plugin-transform-builtin-extend",
         {

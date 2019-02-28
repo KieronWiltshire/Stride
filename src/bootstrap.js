@@ -2,33 +2,9 @@
 
 import OS from 'os';
 import Path from 'path';
-import Env from '~/env';
 import Bootit from 'bootit';
-import Router from '~/router';
 import Greenlock from 'greenlock';
-import Respondent from 'respondent';
-import ErrorResponse from '~/errors/response';
-import {default as Application, io} from '~/app';
-
-/**
- * Begin listening for events
- */
-import '~/listeners';
-
-/**
- * Load configurations
- */
-const config = new Respondent({ rootDir: Path.join(__dirname, 'config'), env: Env });
-
-/**
- * Apply the application router before booting the application.
- */
-Application.use('/', Router);
-
-/**
- * Apply an application error response handler
- */
-Application.use(ErrorResponse.handler);
+import {Application, config, io} from '~/main';
 
 /**
  * Bootstrap

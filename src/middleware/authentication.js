@@ -1,15 +1,9 @@
 'use strict';
 
-import Path from 'path';
+import {config} from '~/app';
 import Errors from '~/errors';
-import Respondent from 'respondent';
 import {default as createDebugger} from 'debug';
 import AuthenticationAPI, {tokenRequiredCode} from '~/api/authentication';
-
-/**
- * Load configurations
- */
-const config = new Respondent({ rootDir: Path.join(__dirname, '..', 'config') });
 
 /**
  * Debugger

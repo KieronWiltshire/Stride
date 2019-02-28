@@ -1,18 +1,10 @@
 'use strict';
 
-import Path from 'path';
-import Env from '~/env';
 import Errors from '~/errors';
-import Application from '~/app';
+import {default as Application, config} from '~/app';
 import EventEmitter from 'events';
 import Validator from 'validator';
-import Respondent from 'respondent';
 import {default as createDebugger} from 'debug';
-
-/**
- * Load configurations
- */
-const config = new Respondent({ rootDir: Path.join(__dirname, '..', 'config'), env: Env });
 
 /**
  * Base class which contains shared code
