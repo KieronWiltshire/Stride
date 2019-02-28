@@ -7,7 +7,7 @@ import * as Chai from 'chai';
 import UserAPI from '~/api/user';
 
 /**
- * User Test Suite
+ * User Unit Test Suite
  */
 export default () => {
 

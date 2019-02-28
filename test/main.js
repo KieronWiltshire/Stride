@@ -7,9 +7,12 @@ import Mogront from 'mogront';
 import MogrontConfig from '../mogront.config.js';
 import Respondent from 'respondent';
 
-// Tests
-import UserTests from './suites/user';
-import AuthenticationTests from './suites/authentication';
+// Unit Tests
+import UserUnitTests from './unit/user';
+import AuthenticationUnitTests from './unit/authentication';
+
+// Integration Tests
+import UserIntegrationTests from './integration/user';
 
 /**
  * Load configurations
@@ -38,9 +41,14 @@ describe('Tests', () => {
   });
 
   /**
-   * Test suites
+   * Unit Test suites
    */
-  describe('user tests', UserTests);
-  describe('authentication tests', AuthenticationTests);
+  describe('user unit tests', UserUnitTests);
+  describe('authentication unit tests', AuthenticationUnitTests);
+
+  /**
+   * Integration suites
+   */
+  describe('user integration tests', UserIntegrationTests);
 
 });

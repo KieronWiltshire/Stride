@@ -1,34 +1,56 @@
 'use strict';
 
-import OS from 'os';
-import Path from 'path';
-import Bootit from 'bootit';
-import Greenlock from 'greenlock';
-import {Application, config, io} from '~/main';
+import Cors from 'cors';
+import Helmet from 'helmet';
+import Logger from 'morgan';
+import Router from '~/router';
+import BodyParser from 'body-parser';
+import CookieParser from 'cookie-parser';
+import MethodOverride from 'method-override';
+import {default as Application, config} from '~/app';
+import ErrorResponse from '~/errors/response';
 
 /**
- * Bootstrap
+ * Begin listening for events
  */
-let options = {
-  io: io,
-  redirectToHttps: true
-};
+import '~/listeners';
 
-if (config.get('http.secure', false)) {
-  if (config.get('greenlock.enabled', true)) {
-    options.greenlock = Greenlock.create({
-      agreeTos: true,
-      email: config.get('greenlock.email', 'user@example.com'),
-      approveDomains: config.get('greenlock.approveDomains', [ 'example.com' ]),
-      communityMember: true,
-      version: 'draft-12',
-      server: process.env.NODE_ENV === 'production' ? 'https://acme-v02.api.letsencrypt.org/directory' : 'https://acme-staging-v02.api.letsencrypt.org/directory',
-      configDir: Path.join(OS.homedir(), 'acme/etc'),
-    });
-  } else {
-    options.key = config.get('http.secureKeyPath', Path.join(__dirname, '..', 'key.pem'));
-    options.certificate = config.get('http.secureCertPath', Path.join(__dirname, '..', 'certificate.pem'));
-  }
+/**
+ * Serve the favicon
+ */
+// let faviconPath = Path.join(publicDir, 'favicon.ico');
+// if (Fs.existsSync(faviconPath)) {
+//   Application.use(favicon(faviconPath));
+// }
+
+/**
+ * Global Middleware
+ */
+if (process.env.NODE_ENV !== 'testing') {
+  Application.use(Logger('dev'));
 }
 
-Bootit.start(Application, options);
+Application.use(BodyParser.json());
+Application.use(BodyParser.urlencoded({ 'extended': true }));
+Application.use(CookieParser(config.get('app.key', null), {
+  'httpOnly': true,
+  'secure': config.get('app.secure', false)
+}));
+Application.use(Helmet());
+Application.use(MethodOverride('X-HTTP-Method-Override'));
+Application.use(Cors());
+
+/**
+ * Apply the application router before booting the application.
+ */
+Application.use('/', Router);
+
+/**
+ * Apply an application error response handler
+ */
+Application.use(ErrorResponse.handler);
+
+/**
+ * Exports
+ */
+export * from '~/app';

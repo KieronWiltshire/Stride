@@ -11,7 +11,7 @@ import AuthenticationAPI from '~/api/authentication';
 import AuthenticationMiddleware from '~/middleware/authentication';
 
 /**
- * Authentication Test Suite
+ * Authentication Unit Test Suite
  */
 export default () => {
 
