@@ -3,15 +3,14 @@
   "version": "1.0.0",
   "description": "Boilerplate/framework for developing APIs quickly and effectively in node",
   "private": true,
-  "main": "./build/bootstrap.js",
+  "main": "./build/server.js",
   "files": [
     "build",
     "src",
     "test"
   ],
   "scripts": {
-    "start": "forever start ./build/server.js",
-    "stop": "forever stop ./build/server.js",
+    "start": "node ./build/server.js",
     "build": "gulp build",
     "dev": "nodemon --exec babel-node src/server.js",
     "pretest": "eslint --ignore-path .gitignore .",
@@ -19,9 +18,9 @@
     "mogront": "babel-node ./node_modules/mogront/build/bin/cli.js --config=\"mogront.config.js\" --template=\"es6\""
   },
   "author": "Kieron Wiltshire",
-  "license": "SEE LICENSE IN LICENSE.md",
+  "license": "See license.md",
   "dependencies": {
-    "babel-runtime": "^6.26.0",
+    "@babel/runtime": "^7.3.4",
     "bcrypt": "^3.0.4",
     "body-parser": "^1.18.3",
     "bootit": "^1.3.0",
@@ -31,7 +30,6 @@
     "dotenv": "^6.2.0",
     "dotenv-parse-variables": "^0.2.0",
     "express": "^4.16.4",
-    "forever": "^0.15.3",
     "fs-extra": "^7.0.1",
     "gelert": "^2.0.0",
     "greenlock": "^2.6.7",
@@ -53,11 +51,12 @@
   "devDependencies": {
     "@babel/cli": "^7.2.3",
     "@babel/core": "^7.3.4",
+    "@babel/plugin-transform-async-to-generator": "^7.3.4",
+    "@babel/plugin-transform-runtime": "^7.3.4",
     "@babel/preset-env": "^7.3.4",
     "@babel/register": "^7.0.0",
     "babel-plugin-add-module-exports": "^1.0.0",
     "babel-plugin-root-import": "^6.1.0",
-    "babel-plugin-transform-async-to-generator": "^6.24.1",
     "babel-plugin-transform-builtin-extend": "^1.1.2",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-export-extensions": "^6.22.0",
@@ -79,9 +78,10 @@
     ],
     "plugins": [
       "add-module-exports",
-      "transform-async-to-generator",
+      "@babel/plugin-transform-async-to-generator",
       "transform-class-properties",
       "transform-export-extensions",
+      "@babel/plugin-transform-runtime",
       [
         "babel-plugin-transform-builtin-extend",
         {

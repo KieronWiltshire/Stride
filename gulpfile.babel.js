@@ -4,8 +4,10 @@ import Fs from 'fs-extra';
 import Path from 'path';
 import Gulp from 'gulp';
 import Babel from 'gulp-babel';
+import Package from './package.json';
 
 let distDir = Path.join(__dirname, 'build');
+
 
 /**
  * Clean the directory and remove all
@@ -21,7 +23,7 @@ const transpile = function() {
   return Gulp.src([
       'src/**/*'
     ])
-    .pipe(Babel())
+    .pipe(Babel(Package.babel))
     .pipe(Gulp.dest(distDir));
 };
 
