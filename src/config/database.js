@@ -45,11 +45,18 @@ options['database'] = process.env.DB_NAME || 'testapp';
 options['db'] = options['database'];
 
 /**
- * Database's migrations directory
+ * Database migrations directory
  *
  * The path to the directory that holds the migration files.
  */
 options['migrationsDir'] = Path.join(__dirname, '..', 'migrations');
 options['directory'] = options['migrationsDir'];
+
+/**
+ * Database seeders directory
+ *
+ * The path to the directory that holds the seeder files.
+ */
+options['seedersDir'] = Path.join(__dirname, '..', 'seeders');
 
 export default options;
