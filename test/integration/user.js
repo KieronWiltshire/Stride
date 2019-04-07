@@ -14,7 +14,7 @@ import Server from '~/server';
 export default () => {
 
   it('should do something to test all user aspects of the application', (done) => {
-
+    done();
   });
 
 };

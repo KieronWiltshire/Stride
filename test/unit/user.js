@@ -12,7 +12,7 @@ import UserAPI from '~/api/user';
 export default () => {
 
   it('should do something to test user api ...', (done) => {
-    
+    done();
   });
 
 };

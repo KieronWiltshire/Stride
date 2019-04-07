@@ -14,7 +14,7 @@
     "build": "gulp build",
     "dev": "nodemon --exec babel-node src/server.js",
     "pretest": "eslint --ignore-path .gitignore .",
-    "test": "mocha ./test/main.js --require babel-core/register",
+    "test": "mocha ./test/main.js --require @babel/register",
     "mogront": "babel-node ./node_modules/mogront/build/bin/cli.js --config=\"mogront.config.js\" --template=\"es6\""
   },
   "author": "Kieron Wiltshire",
