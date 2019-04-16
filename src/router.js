@@ -24,7 +24,9 @@ Router.use('/public', Express.static(publicDir));
  * lifecycle.
  */
 Router.use(async function(request, response, next) {
-  if (await Database.isConnected()) {
+  let connection = await Database.getConnection();
+
+  if (connection.isConnected()) {
     next();
   } else {
     next(new Errors.InternalServerError().push(Database.databaseNotConnectedCode));

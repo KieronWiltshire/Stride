@@ -81,15 +81,6 @@ export const getConnection = async function() {
   return connection;
 };
 
-export const isConnected = async function() {
-  try {
-    let connection = await getConnection();
-    return connection.isConnected();
-  } catch (error) {
-    return false;
-  }
-}
-
 /**
  * Export connection
  */
