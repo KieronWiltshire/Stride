@@ -5,7 +5,7 @@ import _ from 'lodash';
 /**
  *
  */
-export class Context {
+export default class Context {
 
   /**
    * Create a new {Context} instance.
@@ -74,12 +74,23 @@ export class Context {
  * @param {Object} object
  * @returns {Object}
  */
-export default function attachContextTo(object) {
-  object['req-ctx'] = new Context();
+export const attachContextTo = function(name, object) {
+  let key = 'req-ctx-'.concat(name);
 
-  object.getContext = function() {
-    return object['req-ctx'];
-  };
+  if (object[key]) {
+    return object[key];
+  } else {
+    object[key] = new Context();
 
-  return object;
-}
+    if (!object.getContext) {
+      object.getContext = function(k) {
+        if (!k) {
+          k = name;
+        }
+        return object['req-ctx-' + k];
+      };
+    }
+
+    return object;
+  }
+};

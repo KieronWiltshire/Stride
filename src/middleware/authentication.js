@@ -2,6 +2,7 @@
 
 import {config} from '~/app';
 import Errors from '~/errors';
+import {attachContextTo} from '~/utilities/context';
 import {default as createDebugger} from 'debug';
 import AuthenticationAPI, {tokenRequiredCode} from '~/api/authentication';
 
@@ -30,6 +31,8 @@ export let badFormatCode = new Errors.ErrorCode('authorization_bad_format', { me
  * @returns {function} middleware
  */
 export default (async function(request, response, next) {
+  attachContextTo('authentication', request);
+
   let token = null;
 
   if (request.method === 'OPTIONS' && request.headers.hasOwnProperty('access-control-request-headers')) {
@@ -66,7 +69,7 @@ export default (async function(request, response, next) {
   try {
     let decodedToken = await AuthenticationAPI.verify({ token });
 
-    request.getContext().set('authentication', decodedToken);
+    request.getContext('authentication').set('token', decodedToken);
 
     return next();
   } catch (error) {

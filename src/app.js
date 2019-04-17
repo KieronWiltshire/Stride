@@ -4,7 +4,6 @@ import Path from 'path';
 import Env from '~/env';
 import Express from 'express';
 import Respondent from 'respondent';
-import Context from '~/utilities/context';
 
 /**
  * Load configurations
@@ -55,15 +54,6 @@ Application.set('port', function(val) {
   }
   return false;
 }(config.get('http.port', 80)));
-
-/**
- * Apply context to request object
- */
-Application.use(function(request, response, next) {
-  request = Context(request);
-
-  next();
-});
 
 // Export
 export default Application;
