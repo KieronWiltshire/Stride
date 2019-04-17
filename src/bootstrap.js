@@ -23,3 +23,4 @@ Application.use(ErrorResponse.handler);
  * Exports
  */
 export * from '~/app';
+export * from '~/socket';

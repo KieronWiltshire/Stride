@@ -2,16 +2,44 @@
 
 import Fs from 'fs';
 import Path from 'path';
+import Cors from 'cors';
+import Helmet from 'helmet';
+import Logger from 'morgan';
 import Errors from '~/errors';
 import Express from 'express';
-import { publicDir } from '~/app';
 import APIRouter from '~/routes/api';
+import BodyParser from 'body-parser';
 import * as Database from './database';
+import {publicDir, config} from '~/app';
+import CookieParser from 'cookie-parser';
+import MethodOverride from 'method-override';
 
 /**
  * Initialize the router.
  */
 const Router = Express.Router();
+
+/**
+ * Global Middleware
+ */
+if (process.env.NODE_ENV !== 'testing') {
+  Router.use(Logger('dev'));
+}
+
+// let faviconPath = Path.join(publicDir, 'favicon.ico');
+// if (Fs.existsSync(faviconPath)) {
+//   Application.use(favicon(faviconPath));
+// }
+
+Router.use(BodyParser.json());
+Router.use(BodyParser.urlencoded({ 'extended': true }));
+Router.use(CookieParser(config.get('app.key', null), {
+  'httpOnly': true,
+  'secure': config.get('app.secure', false)
+}));
+Router.use(Helmet());
+Router.use(MethodOverride('X-HTTP-Method-Override'));
+Router.use(Cors());
 
 /**
  * Configure non-api endpoints

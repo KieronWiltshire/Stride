@@ -2,16 +2,9 @@
 
 import Path from 'path';
 import Env from '~/env';
-import Cors from 'cors';
-import IO from 'socket.io';
-import Helmet from 'helmet';
-import Logger from 'morgan';
 import Express from 'express';
 import Respondent from 'respondent';
-import BodyParser from 'body-parser';
-import CookieParser from 'cookie-parser';
 import Context from '~/utilities/context';
-import MethodOverride from 'method-override';
 
 /**
  * Load configurations
@@ -29,7 +22,6 @@ export const storageDir = Path.join(__dirname, 'storage');
  * Configure Express
  */
 export const Application = Express();
-export const io = IO();
 
 /**
  * Setup view engine && pretty responses
@@ -72,31 +64,6 @@ Application.use(function(request, response, next) {
 
   next();
 });
-
-/**
- * Serve the favicon
- */
-// let faviconPath = Path.join(publicDir, 'favicon.ico');
-// if (Fs.existsSync(faviconPath)) {
-//   Application.use(favicon(faviconPath));
-// }
-
-/**
- * Global Middleware
- */
-if (process.env.NODE_ENV !== 'testing') {
-  Application.use(Logger('dev'));
-}
-
-Application.use(BodyParser.json());
-Application.use(BodyParser.urlencoded({ 'extended': true }));
-Application.use(CookieParser(config.get('app.key', null), {
-  'httpOnly': true,
-  'secure': config.get('app.secure', false)
-}));
-Application.use(Helmet());
-Application.use(MethodOverride('X-HTTP-Method-Override'));
-Application.use(Cors());
 
 // Export
 export default Application;
