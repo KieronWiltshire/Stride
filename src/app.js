@@ -7,13 +7,11 @@ import IO from 'socket.io';
 import Helmet from 'helmet';
 import Logger from 'morgan';
 import Express from 'express';
-import Router from '~/router';
 import Respondent from 'respondent';
 import BodyParser from 'body-parser';
 import CookieParser from 'cookie-parser';
 import Context from '~/utilities/context';
 import MethodOverride from 'method-override';
-import ErrorResponse from '~/errors/response';
 
 /**
  * Load configurations
@@ -99,16 +97,6 @@ Application.use(CookieParser(config.get('app.key', null), {
 Application.use(Helmet());
 Application.use(MethodOverride('X-HTTP-Method-Override'));
 Application.use(Cors());
-
-/**
- * Apply the application router before booting the application.
- */
-Application.use('/', Router);
-
-/**
- * Apply an application error response handler
- */
-Application.use(ErrorResponse.handler);
 
 // Export
 export default Application;
