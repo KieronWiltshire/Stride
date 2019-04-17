@@ -2,13 +2,12 @@
 
 import UserAPI from '~/api/user';
 
-import UserCreated from '~/listeners/user/create';
-import UserChangeEmail from '~/listeners/user/change-email';
-import UserForgotPassword from '~/listeners/user/forgot-password';
+import SendEmailVerificationToken from '~/listeners/user/send-email-verification-token';
+import SendPasswordResetToken from '~/listeners/user/send-password-reset-token';
 
 /**
  * User Listeners
  */
-UserAPI.on('create', UserCreated);
-UserAPI.on('forgotPassword', UserForgotPassword);
-UserAPI.on('changeEmail', UserChangeEmail);
+UserAPI.on('create', SendEmailVerificationToken);
+UserAPI.on('forgotPassword', SendPasswordResetToken);
+UserAPI.on('changeEmail', SendEmailVerificationToken);
