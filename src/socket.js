@@ -5,7 +5,11 @@ import IO from 'socket.io';
 export const io = IO();
 
 /**
- * // Do socket stuff
+ * When a user connects to a socket.
  */
+io.on('connection', (socket) => {
+    console.log(socket);
+    
+});
 
 export default io;

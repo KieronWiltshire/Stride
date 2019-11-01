@@ -52,12 +52,16 @@ Router.use('/public', Express.static(publicDir));
  * lifecycle.
  */
 Router.use(async function(request, response, next) {
-  let connection = await Database.getConnection();
+  try {
+    let connection = await Database.getConnection();
 
-  if (connection.isConnected()) {
-    next();
-  } else {
-    next(new Errors.InternalServerError().push(Database.databaseNotConnectedCode));
+    if (connection.isConnected()) {
+      next();
+    } else {
+      next(new Errors.InternalServerError().push(Database.databaseNotConnectedCode));
+    }
+  } catch (error) {
+    next(error);
   }
 });
 
