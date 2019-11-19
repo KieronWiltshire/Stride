@@ -37,7 +37,7 @@ class AuthenticationAPI extends Base {
    * @param {string} subjectType The type of the specified subject
    * @returns {string} token
    */
-  generate({ subject, subjectType }) {
+  generate({ subject, subjectType = 'user' }) {
     try {
       let payload = {
         'sub': subject,
@@ -97,7 +97,7 @@ class AuthenticationAPI extends Base {
   async refresh({ token }) {
     try {
       if (token) {
-        let decodedToken = await this.verify(token);
+        let decodedToken = await this.verify({ token });
         let toleranceDays = this.getConfig().get('jwt.toleranceDays', 7);
 
         let limitDate = new Date(decodedToken.exp * 1000);
@@ -140,7 +140,14 @@ class AuthenticationAPI extends Base {
         throw new Errors.UnauthorizedError().push(tokenRequiredCode);
       }
 
-      let decodedToken = JWT.verify(token, this.getConfig().get('app.key'));
+      let toleranceDays = this.getConfig().get('jwt.toleranceDays', 7);
+
+      let limitDate = new Date();
+      limitDate.setDate(limitDate.getDate() + toleranceDays);
+
+      let decodedToken = JWT.verify(token, this.getConfig().get('app.key'), {
+        clockTolerance: ((limitDate - new Date()) / 1000)
+      });
 
       if (!(decodedToken && decodedToken.sub)) {
         throw new Errors.ValidationError().push(tokenMalformedCode);
@@ -153,9 +160,13 @@ class AuthenticationAPI extends Base {
 
       if (decodedToken.subtyp) {
         try {
-          if (decodedToken.subtyp.toLowerCase() === 'user') {
-            subject = await UserAPI.findById(decodedToken.sub);
-            jwtValidAfter = subject.sessionsValidAfter;
+          switch(decodedToken.subtyp.toLowerCase()) {
+            case 'user':
+              subject = await UserAPI.findById(decodedToken.sub);
+              jwtValidAfter = subject.sessionsValidAfter;
+              break;
+            default:
+              throw new Error('Token subject not found.');
           }
         } catch (error) {
           this.debug(error);
