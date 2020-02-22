@@ -4,22 +4,23 @@ import OS from 'os';
 import Path from 'path';
 import Bootit from 'bootit';
 import Greenlock from 'greenlock';
-import {Application, config, io} from '~/bootstrap';
+import Config from '~/config';
+import {Application, io} from '~/bootstrap';
 
 /**
  * Bootstrap
  */
 let options = {
-  io: io,
+  io,
   redirectToHttps: true
 };
 
-if (config.get('http.secure', false)) {
-  if (config.get('greenlock.enabled', true)) {
+if (Config.get('http.secure', false)) {
+  if (Config.get('greenlock.enabled', true)) {
     options.greenlock = Greenlock.create({
       agreeTos: true,
-      email: config.get('greenlock.email', 'user@example.com'),
-      approveDomains: config.get('greenlock.approveDomains', [ 'example.com' ]),
+      email: Config.get('greenlock.email', 'user@example.com'),
+      approveDomains: Config.get('greenlock.approveDomains', [ 'example.com' ]),
       communityMember: true,
       version: 'draft-12',
       server: process.env.NODE_ENV === 'production' ? 'https://acme-v02.api.letsencrypt.org/directory' : 'https://acme-staging-v02.api.letsencrypt.org/directory',
@@ -35,4 +36,5 @@ if (config.get('http.secure', false)) {
  * Start server
  */
 export const Server = Bootit.start(Application, options);
+
 export default Server;

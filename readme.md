@@ -44,35 +44,7 @@ The application will throw debug errors if something abnormal occurs. You may vi
 ----
 # Contributing/Developing
 
-When developing an application on top of this template, you should stay consistent with the design principles already set in place. You should also develop following the designed lifecycle.
-
-### Design principles
-
-1. Services *should* be written directly within the `src` directory. Examples are the `mailer` or `database` files, those are services.
-- Routers *should* only be defined within the `routes` directory.
-- Routers *must* extend from `src/routes/index.js`.
-- Routes *should* always redirect to functions defined within your controllers.
-- Middlewares *should* only exist within the `src/middleware` directory.
-- Controllers *should* only exist within the `src/controllers` directory.
-- Controllers *should* only format the incoming request to fit the requirements of an API function.
-- All of your application *should* be written and treated as an API, even if certain aspects of the code are not exposed publicaly.
-- You *should* only create an extension of `Error` if it has a HTTP error equivalent, if it does not you should treat your error as an `ErrorCode` which is then pushed to the relevant error.
-- You *should* create a custom `ErrorCode` for exceptions that can occur during a request's lifecycle.
-- Any errors that are not thrown by your application and are instead thrown by dependencies such as database drivers *should* be ignored and handled by the error handler unless you need to respond to the client meaningfully, for example if you have a database connection error, this is an app specific error and should be ignored, however if you have an issue inserting a record into the database due to a duplicate entry then it is acceptable to catch this error and return the custom error response & associated error codes.
-- Custom config files *should* only exist within `src/config`.
-- Config files *should* be loaded and accessed using the `respondent` npm package.
-- Database tables that are required for the application to function *should* be created and maintained through the use of migrations.
-- Migrations *should* only exist within the `migrations` directory.
-- Migrations *should* only be created using the `mogront` npm package, you can use the cli like so `npm run mogront <args>` command.
-- When creating new files that you'd like to debug, please use the application's namespace. An example is as follows:
-
-```JavaScript
-import Respondent from 'respondent';
-import {default as createDebugger} from 'debug';
-
-const config = new Respondent({ rootDir: Path.join(__dirname, 'config') });
-const debug = createDebugger(config.get('app.name') + ':' + 'your-namespace-can-go-here');
-```
+ UwU
 
 # Testing
 

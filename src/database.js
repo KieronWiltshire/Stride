@@ -1,33 +1,24 @@
 'use strict';
 
-import {config} from '~/app';
-import Errors from '~/errors';
-import MongoDB from 'mongodb';
+import Config from '~/config';
+import { MongoClient } from 'mongodb';
 import {default as createDebugger} from 'debug';
-
-const MongoClient = MongoDB.MongoClient;
-export const ObjectID = MongoDB.ObjectID;
+import HostRequiredCode from '~/errors/codes/database/host-required';
 
 /**
  * Debugger
  */
-const debug = createDebugger(config.get('app.name') + ':' + 'database');
-
-/**
- * Error codes.
- */
-export const noDatabaseHostSpecifiedCode = new Errors.ErrorCode('no_database_host_specified', { message: 'You must specify a host in order to establish a database connection' });
-export const databaseNotConnectedCode = new Errors.ErrorCode('no_database_connection_established', { message: 'A database connection needs to be established' });
+const debug = createDebugger(Config.get('app.name') + ':' + 'database');
 
 /**
  * Connection options
  */
 export let options = {
-  host: config.get('database.host', '127.0.0.1'),
-  port: config.get('database.port', '3306'),
-  user: config.get('database.username', 'root'),
-  password: config.get('database.password', ''),
-  db: config.get('database.database', 'sntl'),
+  host: Config.get('database.host', '127.0.0.1'),
+  port: Config.get('database.port', '3306'),
+  user: Config.get('database.username', 'root'),
+  password: Config.get('database.password', ''),
+  db: Config.get('database.database', 'sntl'),
 };
 
 let connection = null;
@@ -44,7 +35,7 @@ if (options.host) {
     connectionURL = options.host;
   }
 } else {
-  throw new Errors.InternalServerError().push(noDatabaseHostSpecifiedCode);
+  throw ErrorResponse.from(500).push(HostRequiredCode);
 }
 
 if (options.port) {
@@ -56,32 +47,21 @@ if (options.db) {
 }
 
 /**
- * Export connection
+ * Create a mongo client.
  */
-export const client = MongoClient.connect('mongodb://' + connectionURL, {
-  useNewUrlParser: true
+export const client = new MongoClient('mongodb://' + connectionURL, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 });
 
 /**
- * Export getConnection
+ * Connect to the database.
  */
-export const getConnection = async function() {
-  if (!connection) {
-    try {
-      connection = await client;
-    } catch (error) {
-      debug(error);
-    }
-  }
-
-  if (!connection) {
-    throw new Errors.InternalServerError().push(databaseNotConnectedCode);
-  }
-
-  return connection;
-};
+client.connect(async function(err) {
+  debug(err);
+});
 
 /**
- * Export connection
+ * Export mongo client.
  */
 export default client;

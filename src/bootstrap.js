@@ -2,12 +2,7 @@
 
 import Router from '~/router';
 import Application from '~/app';
-import ErrorResponse from '~/errors/response';
-
-/**
- * Begin listening for events
- */
-import '~/listeners';
+import Errors from '~/errors';
 
 /**
  * Apply the application router before booting the application.
@@ -17,7 +12,7 @@ Application.use('/', Router);
 /**
  * Apply an application error response handler
  */
-Application.use(ErrorResponse.handler);
+Application.use(Errors.handler);
 
 /**
  * Exports

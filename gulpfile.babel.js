@@ -1,6 +1,6 @@
 'use strict';
 
-import Fs from 'fs-extra';
+import FS from 'fs-extra';
 import Path from 'path';
 import Gulp from 'gulp';
 import Babel from 'gulp-babel';
@@ -8,16 +8,13 @@ import Package from './package.json';
 
 let distDir = Path.join(__dirname, 'build');
 
-
 /**
- * Clean the directory and remove all
- * build related files.
+ * Clean the directory and remove all the build files.
  */
-const clean = () => new Promise((resolve) => resolve(Fs.removeSync(distDir)));
+const clean = () => new Promise((resolve) => resolve(FS.removeSync(distDir)));
 
 /**
- * Transpile the source into executable
- * javascript.
+ * Transpile the source into executable javascript.
  */
 const transpile = function() {
   return Gulp.src([
@@ -28,16 +25,16 @@ const transpile = function() {
 };
 
 /**
- * Build the application
+ * Build the application.
  */
 Gulp.task('build', Gulp.series(transpile));
 
 /**
- * Transpile the application
+ * Transpile the application.
  */
 Gulp.task('transpile', Gulp.series(clean), transpile);
 
 /**
- * Clean the environment
+ * Clean the environment.
  */
 Gulp.task('clean', clean);
