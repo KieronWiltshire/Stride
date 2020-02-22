@@ -23,7 +23,7 @@ describe('Tests', () => {
         let db = client.db(Config.get('database.database', 'stride'));
 
         if (await db.dropDatabase()) {
-          let m = new Mogront(null, MogrontConfig);
+          let m = new Mogront(client, MogrontConfig);
 
           await m.migrate();
         }
