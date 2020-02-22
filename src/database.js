@@ -2,13 +2,8 @@
 
 import Config from '~/config';
 import { MongoClient } from 'mongodb';
-import {default as createDebugger} from 'debug';
+import Errors from '~/errors';
 import HostRequiredCode from '~/errors/codes/database/host-required';
-
-/**
- * Debugger
- */
-const debug = createDebugger(Config.get('app.name') + ':' + 'database');
 
 /**
  * Connection options
@@ -21,7 +16,6 @@ export let options = {
   db: Config.get('database.database', 'sntl'),
 };
 
-let connection = null;
 let connectionURL = null;
 
 if (options.user && options.password) {
@@ -35,7 +29,7 @@ if (options.host) {
     connectionURL = options.host;
   }
 } else {
-  throw ErrorResponse.from(500).push(HostRequiredCode);
+  throw Errors.from(500).push(HostRequiredCode);
 }
 
 if (options.port) {
@@ -52,13 +46,6 @@ if (options.db) {
 export const client = new MongoClient('mongodb://' + connectionURL, {
   useNewUrlParser: true,
   useUnifiedTopology: true
-});
-
-/**
- * Connect to the database.
- */
-client.connect(async function(err) {
-  debug(err);
 });
 
 /**

@@ -1,4 +1,4 @@
-  
+
 'use strict';
 
 import BaseError from '~/errors/base';

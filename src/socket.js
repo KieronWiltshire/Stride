@@ -9,7 +9,7 @@ export const io = IO();
  */
 io.on('connection', (socket) => {
     console.log(socket);
-    
+
 });
 
 export default io;

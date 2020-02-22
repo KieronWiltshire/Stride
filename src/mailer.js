@@ -1,3 +1,5 @@
+/* eslint-disable require-atomic-updates */
+
 'use strict';
 
 import Config from '~/config';
@@ -33,4 +35,4 @@ export default async function() {
   }
 
   return transport;
-};
+}
