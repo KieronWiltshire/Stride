@@ -1,7 +1,7 @@
 {
-  "name": "admes-backend",
-  "version": "1.0.0",
-  "description": "Increasing the amount of sales through the power of messaging.",
+  "name": "Stride",
+  "version": "2.0.0",
+  "description": "Boilerplate/framework for developing APIs quickly and effectively in node.",
   "private": true,
   "main": "./build/server.js",
   "files": [
@@ -19,14 +19,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@gitlab.com/admes/backend.git"
+    "url": "git+ssh://git@github.com:KieronWiltshire/Stride.git"
   },
   "author": "Kieron Wiltshire",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
-    "url": "https://gitlab.com/admes/backend/issues"
+    "url": "https://github.com/KieronWiltshire/Stride/issues"
   },
-  "homepage": "https://gitlab.com/admes/backend#readme",
+  "homepage": "https://github.com/KieronWiltshire/Stride",
   "devDependencies": {
     "@babel/cli": "^7.8.4",
     "@babel/core": "^7.8.4",
