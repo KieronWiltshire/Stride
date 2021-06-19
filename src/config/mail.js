@@ -42,7 +42,7 @@ options['password'] = process.env.MAIL_PASSWORD || '';
  * The sender of the emails
  *
  * The sender will default to the username but can optionally be
- * overriden here or by specifying a `MAIL_SENDER` parameter in
+ * overridden here or by specifying a `MAIL_SENDER` parameter in
  * the `.env` file.
  */
 options['sender'] = process.env.MAIL_SENDER || options['username'] || 'no-reply@example.com';
