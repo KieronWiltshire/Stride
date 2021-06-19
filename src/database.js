@@ -29,7 +29,7 @@ if (options.host) {
     connectionURL = options.host;
   }
 } else {
-  throw Errors.from(500).push(HostRequiredCode);
+  throw Errors.status(500).push(HostRequiredCode);
 }
 
 if (options.port) {
